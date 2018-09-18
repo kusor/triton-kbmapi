@@ -5,21 +5,20 @@
 -->
 
 <!--
-    Copyright (c) 2016, Joyent, Inc.
+    Copyright (c) 2018, Joyent, Inc.
 -->
 
-# triton-kbmapi: An Earth-shattering key management and backup service
+# triton-kbmapi: An Earth-shattering key backup and management service
 
     This repository is part of the Joyent Triton project. See the [contribution
     guidelines](https://github.com/joyent/triton/blob/master/CONTRIBUTING.md) --
     *Triton does not use GitHub PRs* -- and general documentation at the main
     [Triton project](https://github.com/joyent/triton) page.
 
-    Other stuf...
-
 ## Development
 
-Describe steps necessary for development here.
+This is an incomplete work in progress of a proof of concept.  You have
+been warned.
 
     make all (Someday)
 
