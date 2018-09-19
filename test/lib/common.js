@@ -14,10 +14,13 @@
 
 'use strict';
 
+var KBMAPI = require('sdc-clients').KBMAPI;
+
 var assert = require('assert-plus');
 var clone = require('clone');
 var fmt = require('util').format;
 var jsprim = require('jsprim');
+var mod_uuid = require('node-uuid');
 var util = require('util');
 
 var CREATED = {};
@@ -375,6 +378,24 @@ function resetCreated() {
     CREATED = {};
 }
 
+function createClient(url, t) {
+    var reqID = mod_uuid.v4();
+    var opts = {
+        agent: false,
+        headers: { 'x-request-id': reqID },
+        url: url
+    };
+
+    var client = new KBMAPI(opts);
+    client.req_id = reqID;
+
+    if (t) {
+        t.ok(client, 'created client with req_id=' + client.req_id);
+    }
+
+    return client;
+}
+
 module.exports = {
 	addToState: addToState,
     afterAPIcall: afterAPIcall,
@@ -382,6 +403,7 @@ module.exports = {
     afterAPIlist: afterAPIlist,
     assertArgs: assertArgs,
     assertArgsList: assertArgsList,
+    createClient: createClient,
     doneErr: doneErr,
     doneRes: doneRes,
     ifErr: ifErr,
