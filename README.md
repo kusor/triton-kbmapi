@@ -25,7 +25,7 @@ been warned.
 
 ## Test
 
-Describe steps necessary for testing here.
+This probably still fails miserably, but soon...
 
     make test
 
