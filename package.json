@@ -7,14 +7,17 @@
   "dependencies": {
     "assert-plus": "^1.0.0",
     "bunyan": "^1.8.12",
-    "clone": "^2.1.2",
+    "clone": "1.0.2",
     "jsprim": "^1.4.0",
     "mooremachine": "^2.2.1",
     "moray": "^3.5.0",
+    "node-sdc-clients": "git+https://github.com/joyent/node-sdc-clients.git#746b8866aeea849d74576c4de2b746dc2607be25",
+    "node-uuid": "1.4.8",
     "restify": "^4.3.0",
     "restify-warden": "^1.1.0",
     "trace-event": "^1.3.0",
-    "verror": "git+https://github.com/joyent/node-verror.git#ecddeda07827742bd2c598033a02f4c42a6fdc26"
+    "verror": "git+https://github.com/joyent/node-verror.git#ecddeda07827742bd2c598033a02f4c42a6fdc26",
+    "vasync": "1.6.4"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
