@@ -91,9 +91,17 @@ include tools/mk/Makefile.manpages.defs
 .PHONY: all
 all: $(SMF_MANIFESTS) $(STAMP_NODE_MODULES) $(GO_TARGETS) | $(REPO_DEPS)
 
+$(ISTANBUL): | $(NPM_EXEC)
+	$(NPM) install
+
+$(FAUCET): | $(NPM_EXEC)
+	$(NPM) install
+
+CLEAN_FILES += ./node_modules/tape
+
 .PHONY: test
-test: $(STAMP_NODE_MODULES) $(GO_TEST_TARGETS) $(TEST_CTF_TARGETS)
-	$(NODE) $(TAPE) test/*.test.js
+test: $(ISTANBUL) $(FAUCET)
+	$(NODE) $(ISTANBUL) cover --print none test/unit/run.js | $(FAUCET)
 
 #
 # Target definitions.  This is where we include the target Makefiles for
