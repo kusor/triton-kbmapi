@@ -25,6 +25,18 @@ var util = require('util');
 
 var CREATED = {};
 
+function requestHeaders(opts) {
+    var headers = opts.headers || {};
+
+    headers['x-request-id'] = mod_uuid.v4();
+
+    if (opts.etag) {
+        headers['If-Match'] = opts.etag;
+    }
+
+    return headers;
+}
+
 /**
  * Adds the given object to:
  * - CREATED[type]
@@ -374,6 +386,27 @@ function ifErr(t, err, desc) {
     return false;
 }
 
+function requestOpts(t, opts) {
+    assert.object(t, 't');
+
+    var desc;
+    if (typeof (opts) === 'undefined') {
+        desc = '';
+        opts = {};
+    } else if (typeof (opts) === 'string') {
+        desc = ': ' + opts;
+        opts = {};
+    } else {
+        assert.object(opts, 'opts');
+        desc = opts.desc ? ': ' + opts.desc : '';
+    }
+
+    var headers = requestHeaders(opts);
+    var reqId = headers['x-request-id'];
+
+    t.ok(reqId, fmt('req ID: %s%s', reqId, desc));
+}
+
 function resetCreated() {
     CREATED = {};
 }
@@ -407,5 +440,6 @@ module.exports = {
     doneErr: doneErr,
     doneRes: doneRes,
     ifErr: ifErr,
-    resetCreated: resetCreated
+    resetCreated: resetCreated,
+    reqOpts: requestOpts
 };
