@@ -47,11 +47,12 @@ function createAndGetToken(t, opts, callback) {
     opts.reqType = 'create';
     createToken(t, opts, function (err, res) {
         if (err) {
-            return doneErr(err, t, callback);
+            doneErr(err, t, callback);
+            return;
         }
         opts.reqtype = 'get';
 
-        return getToken(t, opts, callback);
+        getToken(t, opts, callback);
     });
 }
 

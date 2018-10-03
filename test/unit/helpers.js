@@ -18,10 +18,8 @@ function reset() {
     common.resetCreated();
 }
 
-function createClient(_t) {
-    // TODO
-    // common.createClient(mod_server.get().info().url, t);
-    return null;
+function createClient(t) {
+    return common.createClient(mod_server.get().info().url, t);
 }
 
 function createClientAndServer(opts, callback) {

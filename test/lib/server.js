@@ -70,12 +70,13 @@ function createServer(t) {
     createTestServer({}, function (err, res) {
         t.ifErr(err, 'creating server');
         if (err) {
-            return t.end();
+            t.end();
+            return;
         }
 
         t.ok(res.server, 'server created');
         t.ok(res.client, 'client created');
-        return t.end();
+        t.end();
     });
 }
 
