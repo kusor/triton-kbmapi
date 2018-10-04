@@ -62,7 +62,7 @@ test('Initial setup', function tInitialSetup(t) {
                 cn_uuid: TOKENS[guid].cn_uuid,
                 model: TOKENS[guid].model
             };
-            t2.test('GUID ' + guid, function doCreate(t3) {
+            t2.test('Create token GUID ' + guid, function doCreate(t3) {
                 mod_token.create(t3, {
                     params: token,
                     exp: token

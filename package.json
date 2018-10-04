@@ -15,9 +15,10 @@
     "node-uuid": "1.4.8",
     "restify": "^4.3.0",
     "restify-warden": "^1.1.0",
+    "sdc-clients": "git+https://github.com/joyent/node-sdc-clients.git#96ad113f5985438b86e8725fa12777f7a8678eb3",
     "trace-event": "^1.3.0",
-    "verror": "git+https://github.com/joyent/node-verror.git#ecddeda07827742bd2c598033a02f4c42a6fdc26",
-    "vasync": "1.6.4"
+    "vasync": "1.6.4",
+    "verror": "git+https://github.com/joyent/node-verror.git#ecddeda07827742bd2c598033a02f4c42a6fdc26"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
