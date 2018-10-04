@@ -62,11 +62,14 @@ test('Initial setup', function tInitialSetup(t) {
                 cn_uuid: TOKENS[guid].cn_uuid,
                 model: TOKENS[guid].model
             };
-            mod_token.create(t2, {
-                params: token,
-                exp: token
+            t2.test('GUID ' + guid, function doCreate(t3) {
+                mod_token.create(t3, {
+                    params: token,
+                    exp: token
+                });
             });
         });
+        t2.end();
     });
 
     t.test('Get token', function tGetToken(t2) {
@@ -83,6 +86,19 @@ test('Initial setup', function tInitialSetup(t) {
                 cn_uuid: tok.cn_uuid,
                 model: tok.model
             }
+        });
+    });
+
+    t.test('Get token with pin', function tGetTokenPin(t2) {
+        var guid = 'DDA81AA0DB3528479AB6D2AC75624E5E';
+        var tok = TOKENS[guid];
+        tok.guid = guid;
+
+        mod_token.getPin(t2, {
+            params: {
+                guid: guid
+            },
+            exp: tok
         });
     });
 });

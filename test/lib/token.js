@@ -60,20 +60,48 @@ function getToken(t, opts, callback) {
     common.assertArgs(t, opts, callback);
     var client = opts.client || mod_client.get();
     var guid = opts.params.guid;
-    var params = clone(opts.params);
 
     log.debug({ params: opts.params }, 'getting pivtoken');
     opts.type = TYPE;
     opts.reqType = 'get';
 
+    client.getToken(guid, common.reqOpts(t, opts),
+        common.afterAPIcall.bind(null, t, opts, callback));
+}
+
+function getTokenPin(t, opts, callback) {
+    common.assertArgs(t, opts, callback);
+    var client = opts.client || mod_client.get();
+    var guid = opts.params.guid;
+
+    log.debug({ params: opts.params }, 'getting pivtoken pin');
+    opts.type = TYPE;
+    opts.reqType = 'get';
+
+    client.getTokenPin(guid, common.reqOpts(t, opts),
+        common.afterAPIcall.bind(null, t, opts, callback));
+}
+
+function deleteToken(t, opts, callback) {
+    common.assertArgs(t, opts, callback);
+    var client = opts.client || mod_client.get();
+    var guid = opts.params.guid;
+    var params = clone(opts.params);
+
+    log.debug({ params: opts.params }, 'deleting pivtoken');
+    opts.type = TYPE;
+    opts.reqType = 'del';
+
     delete params.guid;
 
-    client.getToken(guid, params, common.reqOpts(t, opts),
-        common.afterAPIcall.bind(null, t, opts, callback));
+    client.deleteToken(guid, params, common.reqOpts(t, opts),
+        common.afterAPIdelete.bind(null, t, opts, callback));
 }
 
 module.exports = {
     create: createToken,
     createAndGet: createAndGetToken,
-    get: getToken
+    delete: deleteToken,
+    get: getToken,
+    getPin: getTokenPin
 };
