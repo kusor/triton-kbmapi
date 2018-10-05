@@ -101,6 +101,32 @@ test('Initial setup', function tInitialSetup(t) {
             exp: tok
         });
     });
+
+    t.test('Delete token', function tDeleteToken(t2) {
+        var guid = 'DDA81AA0DB3528479AB6D2AC75624E5E';
+
+        mod_token.delete(t2, {
+            params: {
+                guid: guid
+            },
+            exp: {}
+        });
+    });
+
+    t.test('Lookup deleted token', function tGetDeletedToken(t2) {
+        var guid = 'DDA81AA0DB3528479AB6D2AC75624E5E';
+
+        mod_token.get(t2, {
+            params: {
+                guid: guid
+            },
+            expCode: 404,
+            expErr: {
+                code: 'ResourceNotFound',
+                message: 'piv tokens not found'
+            }
+        });
+    });
 });
 
 test('Stop server', mod_server.close);

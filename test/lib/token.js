@@ -89,6 +89,7 @@ function deleteToken(t, opts, callback) {
     var params = clone(opts.params);
 
     log.debug({ params: opts.params }, 'deleting pivtoken');
+    opts.id = guid;
     opts.type = TYPE;
     opts.reqType = 'del';
 
