@@ -42,11 +42,15 @@ ESLINT_FILES	= $(JS_FILES)
 SMF_MANIFESTS_IN =	smf/manifests/kbmapi.xml.in
 include ./tools/mk/Makefile.smf.defs
 
+#
+# Makefile.defs defines variables used as part of the build process.
+#
+include ./tools/mk/Makefile.defs
+
 NODE_PREBUILT_VERSION =	v6.14.3
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_VERSION =	v6.14.3
-	# triton-origin-multiarch-18.1.0@1.0.1
-	NODE_PREBUILT_IMAGE=b6ea7cb4-6b90-48c0-99e7-1d34c2895248
+	NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
 	NODE_PREBUILT_TAG := zone
 	include ./tools/mk/Makefile.node_prebuilt.defs
 else
@@ -55,11 +59,6 @@ else
 	NPM_EXEC=$(shell which npm)
 	NODE_EXEC=$(shell which node)
 endif
-
-#
-# Makefile.defs defines variables used as part of the build process.
-#
-include ./tools/mk/Makefile.defs
 
 #
 # Makefile.node_modules.defs provides a common target for installing modules
@@ -123,7 +122,6 @@ pkg: all $(SMF_MANIFESTS)
 	@mkdir -p $(INSTDIR)/test/lib
 	@touch $(PKGDIR)/site/.do-not-delete-me
 	cp -r $(TOP)/server.js \
-		$(TOP)/bin \
 		$(TOP)/lib \
 		$(TOP)/node_modules \
 		$(TOP)/package.json \
@@ -136,7 +134,7 @@ pkg: all $(SMF_MANIFESTS)
 	cp -r $(TOP)/test/lib/* $(INSTDIR)/test/lib/
 	cp -PR $(NODE_INSTALL) $(INSTDIR)/node
 	mkdir -p $(PKGDIR)/root/opt/smartdc/boot
-	cp -R $(TOP)/sdc-scripts/* $(PKGDIR)/root/opt/smartdc/boot
+	cp -R $(TOP)/deps/sdc-scripts/* $(PKGDIR)/root/opt/smartdc/boot
 
 $(RELEASE_TARBALL): pkg
 	(cd $(PKGDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root site)
