@@ -82,6 +82,27 @@ function getTokenPin(t, opts, callback) {
         common.afterAPIcall.bind(null, t, opts, callback));
 }
 
+function listTokens(t, opts, callback) {
+    common.assertArgsList(t, opts, callback);
+
+    var client = opts.client || mod_client.get();
+    var params = opts.params || {};
+    var desc = ' ' + JSON.stringify(params)
+        + (opts.desc ? (' ' + opts.desc) : '');
+
+    if (!opts.desc) {
+        opts.desc = desc;
+    }
+    opts.id = 'token';
+    opts.type = TYPE;
+    opts.reqType = 'list';
+
+    log.debug({ params: params }, 'list tokens');
+
+    client.getTokens(params, common.reqOpts(t, opts),
+        common.afterAPIlist.bind(null, t, opts, callback));
+}
+
 function deleteToken(t, opts, callback) {
     common.assertArgs(t, opts, callback);
     var client = opts.client || mod_client.get();
@@ -104,5 +125,6 @@ module.exports = {
     createAndGet: createAndGetToken,
     delete: deleteToken,
     get: getToken,
-    getPin: getTokenPin
+    getPin: getTokenPin,
+    list: listTokens
 };
