@@ -19,17 +19,14 @@
 ISTANBUL	:= node_modules/.bin/istanbul
 FAUCET		:= node_modules/.bin/faucet
 
-# Makefile.defs defines variables used as part of the build process.
-#
-include ./tools/mk/Makefile.defs
-
 #
 # Configuration used by Makefile.defs and Makefile.targ to generate
 # "check" and "docs" targets.
 #
-DOC_FILES		= index.md boilerplateapi.md
+DOC_FILES		= index.md
 JSON_FILES		= package.json
 JS_FILES		:= $(shell find lib test -name '*.js') tools/bashstyle
+JSL_CONF_NODE	= tools/jsl.node.conf
 JSL_FILES_NODE	= $(JS_FILES)
 JSSTYLE_FILES	= $(JS_FILES)
 JSSTYLE_FLAGS	= -o indent=2,doxygen,unparenthesized-return=0,strict-indent=true
@@ -37,8 +34,6 @@ ESLINT			= ./node_modules/.bin/eslint
 ESLINT_FILES	= $(JS_FILES)
 
 #BASH_FILES		:= sbin/kbmapid bin/kbmctl
-JSL_CONF_NODE =		tools/jsl.node.conf
-JSSTYLE_FLAGS =		-f tools/jsstyle.conf
 
 #
 # Configuration used by Makefile.smf.defs to generate "check" and "all" targets
@@ -60,6 +55,11 @@ else
 	NPM_EXEC=$(shell which npm)
 	NODE_EXEC=$(shell which node)
 endif
+
+#
+# Makefile.defs defines variables used as part of the build process.
+#
+include ./tools/mk/Makefile.defs
 
 #
 # Makefile.node_modules.defs provides a common target for installing modules
@@ -84,6 +84,10 @@ include tools/mk/Makefile.manpages.defs
 MAN_SECTION :=		3bapi
 include tools/mk/Makefile.manpages.defs
 
+TOP				:= $(shell pwd)
+RELEASE_TARBALL	:= kbmapi-pkg-$(STAMP).tar.bz2
+PKGDIR			:= $(TOP)/$(BUILD)/pkg
+INSTDIR			:= $(PKGDIR)/root/opt/smartdc/kbmapi
 
 #
 # Repo-specific targets
@@ -102,6 +106,49 @@ CLEAN_FILES += ./node_modules/tape
 .PHONY: test
 test: $(ISTANBUL) $(FAUCET)
 	$(NODE) $(ISTANBUL) cover --print none test/unit/run.js | $(FAUCET)
+
+#
+# Packaging targets
+#
+
+.PHONY: release
+release: $(RELEASE_TARBALL)
+
+.PHONY: pkg
+pkg: all $(SMF_MANIFESTS)
+	@echo "Building $(RELEASE_TARBALL)"
+	@rm -rf $(PKGDIR)
+	@mkdir -p $(PKGDIR)/site
+	@mkdir -p $(INSTDIR)/smf/manifests
+	@mkdir -p $(INSTDIR)/test/lib
+	@touch $(PKGDIR)/site/.do-not-delete-me
+	cp -r $(TOP)/server.js \
+		$(TOP)/bin \
+		$(TOP)/lib \
+		$(TOP)/node_modules \
+		$(TOP)/package.json \
+		$(TOP)/sapi_manifests \
+		$(TOP)/sbin \
+		$(INSTDIR)/
+	cp smf/manifests/*.xml $(INSTDIR)/smf/manifests
+	cp $(TOP)/test/runtest $(INSTDIR)/test/
+	cp $(TOP)/test/runtests $(INSTDIR)/test/
+	cp -r $(TOP)/test/lib/* $(INSTDIR)/test/lib/
+	cp -PR $(NODE_INSTALL) $(INSTDIR)/node
+	mkdir -p $(PKGDIR)/root/opt/smartdc/boot
+	cp -R $(TOP)/sdc-scripts/* $(PKGDIR)/root/opt/smartdc/boot
+
+$(RELEASE_TARBALL): pkg
+	(cd $(PKGDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root site)
+
+.PHONY: publish
+publish: release
+	@if [[ -z "$(BITS_DIR)" ]]; then \
+		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
+		exit 1; \
+	fi
+	mkdir -p $(BITS_DIR)/kbmapi
+	cp $(TOP)/$(RELEASE_TARBALL) $(BITS_DIR)/kbmapi/$(RELEASE_TARBALL)
 
 #
 # Target definitions.  This is where we include the target Makefiles for

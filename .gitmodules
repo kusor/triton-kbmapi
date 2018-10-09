@@ -7,3 +7,6 @@
 [submodule "deps/sdc-scripts"]
 	path = deps/sdc-scripts
 	url = https://github.com/joyent/sdc-scripts.git
+[submodule "deps/jsstyle"]
+	path = deps/jsstyle
+	url = https://github.com/davepacheco/jsstyle.git
