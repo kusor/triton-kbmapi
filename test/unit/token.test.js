@@ -43,17 +43,17 @@ var TOKENS = [
 ];
 
 test('Initial setup', function tInitialSetup(t) {
-	h.reset();
+    h.reset();
 
-	t.test('Create client and server', function tCreateClientServer(t2) {
+    t.test('Create client and server', function tCreateClientServer(t2) {
         h.createClientAndServer(function (err, res, moray) {
             KBMAPI = res;
             MORAY = moray;
-			t2.ifError(err, 'server creation');
-			t2.ok(KBMAPI, 'client');
-			t2.ok(MORAY, 'moray');
+            t2.ifError(err, 'server creation');
+            t2.ok(KBMAPI, 'client');
+            t2.ok(MORAY, 'moray');
             t2.end();
-		});
+        });
     });
 
     t.test('Create tokens', function tCreateTokens(t2) {

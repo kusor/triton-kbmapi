@@ -430,7 +430,7 @@ function createClient(url, t) {
 }
 
 module.exports = {
-	addToState: addToState,
+    addToState: addToState,
     afterAPIcall: afterAPIcall,
     afterAPIdelete: afterAPIdelete,
     afterAPIlist: afterAPIlist,

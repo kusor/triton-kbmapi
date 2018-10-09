@@ -23,24 +23,24 @@ var log = require('./log');
 var TYPE = 'pivtoken';
 
 function createToken(t, opts, callback) {
-	common.assertArgs(t, opts, callback);
-	var client = opts.client || mod_client.get();
+    common.assertArgs(t, opts, callback);
+    var client = opts.client || mod_client.get();
 
-	log.debug({ params: opts.params }, 'creating pivtoken');
-	opts.fillIn = [ 'guid' ];
-	opts.type = TYPE;
-	opts.reqType = 'create';
+    log.debug({ params: opts.params }, 'creating pivtoken');
+    opts.fillIn = [ 'guid' ];
+    opts.type = TYPE;
+    opts.reqType = 'create';
 
-	var guid = opts.params.guid;
-	var params = clone(opts.params);
-	delete params.guid;
+    var guid = opts.params.guid;
+    var params = clone(opts.params);
+    delete params.guid;
 
-	if (!opts.desc && opts.expErr) {
-		opts.desc = JSON.stringify(opts.params);
-	}
+    if (!opts.desc && opts.expErr) {
+        opts.desc = JSON.stringify(opts.params);
+    }
 
-	client.createToken(guid, params, common.reqOpts(t, opts),
-		common.afterAPIcall.bind(null, t, opts, callback));
+    client.createToken(guid, params, common.reqOpts(t, opts),
+        common.afterAPIcall.bind(null, t, opts, callback));
 }
 
 function createAndGetToken(t, opts, callback) {
