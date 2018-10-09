@@ -11,7 +11,6 @@
     "jsprim": "^1.4.0",
     "mooremachine": "^2.2.1",
     "moray": "^3.5.0",
-    "node-sdc-clients": "git+https://github.com/joyent/node-sdc-clients.git#96ad113f5985438b86e8725fa12777f7a8678eb3",
     "node-uuid": "1.4.8",
     "restify": "^4.3.0",
     "restify-warden": "^1.1.0",
