@@ -135,6 +135,7 @@ pkg: all $(SMF_MANIFESTS)
 	cp -PR $(NODE_INSTALL) $(INSTDIR)/node
 	mkdir -p $(PKGDIR)/root/opt/smartdc/boot
 	cp -R $(TOP)/deps/sdc-scripts/* $(PKGDIR)/root/opt/smartdc/boot
+	cp -R $(TOP)/boot/* $(PKGDIR)/root/opt/smartdc/boot
 
 $(RELEASE_TARBALL): pkg
 	(cd $(PKGDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root site)
