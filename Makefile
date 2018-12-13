@@ -48,7 +48,7 @@ include ./tools/mk/Makefile.smf.defs
 include ./tools/mk/Makefile.defs
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION =	v6.15.0
+	NODE_PREBUILT_VERSION =	v6.15.1
 	NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
 	NODE_PREBUILT_TAG := zone
 	include ./tools/mk/Makefile.node_prebuilt.defs
