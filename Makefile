@@ -12,6 +12,8 @@
 # KBMAPI Makefile
 #
 
+NAME		:= kbmapi
+
 #
 # Tools
 #
@@ -23,35 +25,33 @@ FAUCET		:= node_modules/.bin/faucet
 # Configuration used by Makefile.defs and Makefile.targ to generate
 # "check" and "docs" targets.
 #
-DOC_FILES		= index.md
-JSON_FILES		= package.json
-JS_FILES		:= $(shell find lib test -name '*.js') tools/bashstyle
+DOC_FILES	= index.md
+JSON_FILES	= package.json
+JS_FILES	:= $(shell find lib test -name '*.js') tools/bashstyle
 JSL_CONF_NODE	= tools/jsl.node.conf
 JSL_FILES_NODE	= $(JS_FILES)
 JSSTYLE_FILES	= $(JS_FILES)
 JSSTYLE_FLAGS	= -o indent=2,doxygen,unparenthesized-return=0,strict-indent=true
-ESLINT			= ./node_modules/.bin/eslint
+ESLINT		= ./node_modules/.bin/eslint
 ESLINT_FILES	= $(JS_FILES)
 
+# Not yet
 #BASH_FILES		:= sbin/kbmapid bin/kbmctl
 
 #
 # Configuration used by Makefile.smf.defs to generate "check" and "all" targets
 # for SMF manifest files.
 #
-SMF_MANIFESTS_IN =	smf/manifests/kbmapi.xml.in
-include ./tools/mk/Makefile.smf.defs
+SMF_MANIFESTS_IN	= smf/manifests/kbmapi.xml.in
 
 #
 # Makefile.defs defines variables used as part of the build process.
 #
-include ./tools/mk/Makefile.defs
 
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_VERSION =	v6.15.1
 	NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
 	NODE_PREBUILT_TAG := zone
-	include ./tools/mk/Makefile.node_prebuilt.defs
 else
 	NPM=npm
 	NODE=node
@@ -59,39 +59,35 @@ else
 	NODE_EXEC=$(shell which node)
 endif
 
-#
-# Makefile.node_modules.defs provides a common target for installing modules
-# with NPM from a dependency specification in a "package.json" file.  By
-# including this Makefile, we can depend on $(STAMP_NODE_MODULES) to drive "npm
-# install" correctly.
-#
-include ./tools/mk/Makefile.node_modules.defs
+ENGBLD_USE_BUILDIMAGE	= true
+ENGBLD_REQUIRE		:= $(shell git submodule update --init deps/eng)
+include ./deps/eng/tools/mk/Makefile.defs
+TOP ?= $(error Unable to access eng.git submodule Makefiles.)
 
-#
-# Configuration used by Makefile.manpages.defs to generate manual pages.
-# See that Makefile for details.  MAN_SECTION must be eagerly defined (with
-# ":="), but the Makefile can be used multiple times to build manual pages for
-# different sections.
-#
-MAN_INROOT =		docs/man
-MAN_OUTROOT =		man
-CLEAN_FILES +=		$(MAN_OUTROOT)
+ifeq ($(shell uname -s),SunOS)
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.defs
+	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.defs
+endif
+include ./deps/eng/tools/mk/Makefile.smf.defs
 
-MAN_SECTION :=		1
-include tools/mk/Makefile.manpages.defs
-MAN_SECTION :=		3bapi
-include tools/mk/Makefile.manpages.defs
+ROOT		:= $(shell pwd)
+RELEASE_TARBALL	:= $(NAME)-pkg-$(STAMP).tar.gz
+RELSTAGEDIR	:= /tmp/$(NAME)-$(STAMP)
 
-TOP				:= $(shell pwd)
-RELEASE_TARBALL	:= kbmapi-pkg-$(STAMP).tar.bz2
-PKGDIR			:= $(TOP)/$(BUILD)/pkg
-INSTDIR			:= $(PKGDIR)/root/opt/smartdc/kbmapi
+# triton-origin-multiarch-18.1.0
+BASE_IMAGE_UUID = b6ea7cb4-6b90-48c0-99e7-1d34c2895248
+BUILDIMAGE_NAME = $(NAME)
+BUILDIMAGE_DESC = Triton Key Backup and Management
+AGENTS		= config registrar
+
+PATH		:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 
 #
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) $(STAMP_NODE_MODULES) $(GO_TARGETS) | $(REPO_DEPS)
+all: $(SMF_MANIFESTS) | $(NPM_EXEC) sdc-scripts
+	$(NPM) install
 
 $(ISTANBUL): | $(NPM_EXEC)
 	$(NPM) install
@@ -109,58 +105,50 @@ test: $(ISTANBUL) $(FAUCET)
 # Packaging targets
 #
 
+# XXX: Add bash scripts to this once they're written
 .PHONY: release
-release: $(RELEASE_TARBALL)
-
-.PHONY: pkg
-pkg: all $(SMF_MANIFESTS)
+release: check all $(SMF_MANIFESTS)
 	@echo "Building $(RELEASE_TARBALL)"
-	@rm -rf $(PKGDIR)
-	@mkdir -p $(PKGDIR)/site
-	@mkdir -p $(INSTDIR)/smf/manifests
-	@mkdir -p $(INSTDIR)/test/lib
-	@touch $(PKGDIR)/site/.do-not-delete-me
-	cp -r $(TOP)/server.js \
-		$(TOP)/lib \
-		$(TOP)/node_modules \
-		$(TOP)/package.json \
-		$(TOP)/sapi_manifests \
-		$(TOP)/sbin \
-		$(INSTDIR)/
-	cp smf/manifests/*.xml $(INSTDIR)/smf/manifests
-	cp $(TOP)/test/runtest $(INSTDIR)/test/
-	cp $(TOP)/test/runtests $(INSTDIR)/test/
-	cp -r $(TOP)/test/lib/* $(INSTDIR)/test/lib/
-	cp -PR $(NODE_INSTALL) $(INSTDIR)/node
-	mkdir -p $(PKGDIR)/root/opt/smartdc/boot
-	cp -R $(TOP)/deps/sdc-scripts/* $(PKGDIR)/root/opt/smartdc/boot
-	cp -R $(TOP)/boot/* $(PKGDIR)/root/opt/smartdc/boot
-
-$(RELEASE_TARBALL): pkg
-	(cd $(PKGDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root site)
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/kbmapi
+	@mkdir -p $(RELSTAGEDIR)/site
+	@touch $(RELSTAGEDIR)/site/.do-not-delete-me
+	cp -r $(ROOT)/server.js \
+		$(ROOT)/lib \
+		$(ROOT)/node_modules \
+		$(ROOT)/package.json \
+		$(ROOT)/sapi_manifests \
+		$(ROOT)/sbin \
+		$(ROOT)/smf \
+		$(ROOT)/test \
+		$(ROOT)/build \
+		$(RELSTAGEDIR)/root/opt/smartdc/kbmapi/
+	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/boot
+	cp -R $(ROOT)/deps/sdc-scripts/* $(RELSTAGEDIR)/root/opt/smartdc/boot
+	cp -R $(ROOT)/boot/* $(RELSTAGEDIR)/root/opt/smartdc/boot
+	(cd $(RELSTAGEDIR) && $(TAR) -I pigz -cf $(ROOT)/$(RELEASE_TARBALL) root site)
+	@rm -rf $(RELSTAGEDIR)
 
 .PHONY: publish
 publish: release
-	@if [[ -z "$(BITS_DIR)" ]]; then \
-		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
-		exit 1; \
+	@if [[ -z "$(ENGBLD_BITS_DIR)" ]]; then \
+	  echo "error: 'ENGBLD_BITS_DIR' must be set for 'publish' target"; \
+	  exit 1; \
 	fi
-	mkdir -p $(BITS_DIR)/kbmapi
-	cp $(TOP)/$(RELEASE_TARBALL) $(BITS_DIR)/kbmapi/$(RELEASE_TARBALL)
+	mkdir -p $(ENGBLD_BITS_DIR)/$(NAME)
+	cp $(ROOT)/$(RELEASE_TARBALL) $(ENGBLD_BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
 
 #
 # Target definitions.  This is where we include the target Makefiles for
 # the "defs" Makefiles we included above.
 #
 
-include ./tools/mk/Makefile.deps
+include ./deps/eng/tools/mk/Makefile.deps
 
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.targ
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.targ
+	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.targ
 endif
-
-include ./tools/mk/Makefile.smf.targ
-include ./tools/mk/Makefile.node_modules.targ
-include ./tools/mk/Makefile.targ
+include ./deps/eng/tools/mk/Makefile.smf.targ
+include ./deps/eng/tools/mk/Makefile.targ
 
 sdc-scripts: deps/sdc-scripts/.git
