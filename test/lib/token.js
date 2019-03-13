@@ -9,7 +9,7 @@
  */
 
 /*
- * Test helpers for dealing with fabric VLANs
+ * Test helpers for dealing with tokens
  */
 
 'use strict';
