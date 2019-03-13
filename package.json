@@ -14,7 +14,7 @@
     "node-uuid": "1.4.8",
     "restify": "^4.3.0",
     "restify-warden": "^1.1.0",
-    "sdc-clients": "git+https://github.com/joyent/node-sdc-clients.git#61842e02a02b97f1ac5a635909576793d6dd9d60",
+    "sdc-clients": "git+https://github.com/joyent/node-sdc-clients.git#5cf1e480c6b85350910033cc180ad9cf17eeb853",
     "trace-event": "^1.3.0",
     "vasync": "1.6.4",
     "verror": "1.10.0"
