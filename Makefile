@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright 2018, Joyent, Inc.
+# Copyright 2019, Joyent, Inc.
 #
 
 #
@@ -50,8 +50,8 @@ SMF_MANIFESTS_IN	= smf/manifests/kbmapi.xml.in
 
 ifeq ($(shell uname -s),SunOS)
 	NODE_PREBUILT_VERSION =	v6.17.0
-	NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
-	NODE_PREBUILT_TAG := zone
+	NODE_PREBUILT_IMAGE = c2c31b00-1d60-11e9-9a77-ff9f06554b0f
+	NODE_PREBUILT_TAG := zone64
 else
 	NPM=npm
 	NODE=node
@@ -74,8 +74,8 @@ ROOT		:= $(shell pwd)
 RELEASE_TARBALL	:= $(NAME)-pkg-$(STAMP).tar.gz
 RELSTAGEDIR	:= /tmp/$(NAME)-$(STAMP)
 
-# triton-origin-multiarch-18.1.0
-BASE_IMAGE_UUID = b6ea7cb4-6b90-48c0-99e7-1d34c2895248
+# triton-origin-x86_64-18.4.0
+BASE_IMAGE_UUID = a9368831-958e-432d-a031-f8ce6768d190
 BUILDIMAGE_NAME = $(NAME)
 BUILDIMAGE_DESC = Triton Key Backup and Management
 AGENTS		= config registrar
