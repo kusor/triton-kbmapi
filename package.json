@@ -1,0 +1,31 @@
+{
+  "name": "kbmapi",
+  "description": "Triton Key Backup and Management API",
+  "version": "1.0.0",
+  "author": "Joyent (joyent.com)",
+  "private": true,
+  "dependencies": {
+    "assert-plus": "^1.0.0",
+    "bunyan": "^1.8.12",
+    "clone": "1.0.3",
+    "jsprim": "^1.4.0",
+    "mooremachine": "^2.2.1",
+    "moray": "^3.5.0",
+    "node-uuid": "1.4.8",
+    "restify": "^4.3.0",
+    "restify-warden": "^1.1.0",
+    "sdc-clients": "git+https://github.com/joyent/node-sdc-clients.git#e3e4caca0f19781521c6fa500f8afbaf392d26ef",
+    "trace-event": "^1.3.0",
+    "vasync": "1.6.4",
+    "verror": "1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-plugin-joyent": "^2.1.0",
+    "faucet": "0.0.1",
+    "istanbul": "^0.4.5",
+    "moray-sandbox": "^0.2.1",
+    "tape": "^4.6.0"
+  },
+  "license": "MPL-2.0"
+}

@@ -1,0 +1,12 @@
+{
+    "port": 80,
+    "serviceName": "{{SERVICE_NAME}}",
+    "logLevel": "{{{KBMAPI_LOG_LEVEL}}}",
+    "moray": {
+        "srvDomain": "{{{MORAY_SERVICE}}}",
+        "logLevel": "info",
+        "cueballOptions": {
+            "resolvers": [ "{{{BINDER_SERVICE}}}" ]
+        }
+    }
+}
