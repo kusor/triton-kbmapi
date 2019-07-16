@@ -128,18 +128,19 @@ The token object itself will be represented using JSON similar to:
 ```
 
 
-| Field            | Required | Description |
-| model            | No       | The model of the token. |
-| serial           | No       | The serial number of the token (if available). |
-| cn\_uuid         | Yes      | The UUID of the compute node that contains this token. |
-| guid             | Yes      | The GUID of the provisioned token. |
-| pin              | Yes      | The pin of the provisioned token. |
-| recovery\_tokens | Yes      | An array of recovery tokens.  Used to recover the encryption keys of a zpool protected by this token.  Also used when replacing a token.  When the recovery configuration is updated, a new recovery token is generated and added to the list. |
-| pubkeys          | Yes      | A JSON object containing the _public_ keys of the token. |
-| pubkeys.9a       | Yes      | The public key used for authentication after the token has been unlocked. |
-| pubkeys.9d       | Yes      | The public key used for encryption after the token has been unlocked. |
-| pubkeys.9e       | Yes      | The public key used for authenticating the token itself without a pin (e.g. used when requesting the pin of a token). |
-| attestation      | No       | The attestation certificates for the corresponding pubkeys. |
+**Field**        | **Required** | **Description**
+-----------------|--------------|-----------------
+model            | No       | The model of the token.
+serial           | No       | The serial number of the token (if available).
+cn\_uuid         | Yes      | The UUID of the compute node that contains this token.
+guid             | Yes      | The GUID of the provisioned token.
+pin              | Yes      | The pin of the provisioned token.
+recovery\_tokens | Yes      | An array of recovery tokens.  Used to recover the encryption keys of a zpool protected by this token.  Also used when replacing a token.  When the recovery configuration is updated, a new recovery token is generated and added to the list.
+pubkeys          | Yes      | A JSON object containing the _public_ keys of the token.
+pubkeys.9a       | Yes      | The public key used for authentication after the token has been unlocked.
+pubkeys.9d       | Yes      | The public key used for encryption after the token has been unlocked.
+pubkeys.9e       | Yes      | The public key used for authenticating the token itself without a pin (e.g. used when requesting the pin of a token).
+attestation      | No       | The attestation certificates for the corresponding pubkeys.
 
 
 Note that when provisioning a token, if any of the optional fields are known,
@@ -248,11 +249,12 @@ The entries looks similar to:
 ```
 
 
-| Field         | Description |
-| serial\_range | An range of serial numbers.  This range is inclusive. |
-| allow         | Set to true if this range is allowed, or false is this range is blacklisted. |
-| ca\_dn        | The distinguished name (DN) of the attestation CA for this token.  Used to disambiguate any potential duplicate serial numbers between vendors. |
-| comment       | An operator supplied free form comment. |
+**Field**     | **Description**
+--------------|-----------------
+serial\_range | An range of serial numbers.  This range is inclusive.
+allow         | Set to true if this range is allowed, or false is this range is blacklisted.
+ca\_dn        | The distinguished name (DN) of the attestation CA for this token.  Used to disambiguate any potential duplicate serial numbers between vendors.
+comment       | An operator supplied free form comment.
 
 
 The `kbmadm` command is used to manage this data.
@@ -274,31 +276,34 @@ All response objects are `application/json` encoded HTTP bodies.  In addition,
 all responses will have the following headers:
 
 
-| Header      | Description |
-| Date        | When the response wqas send (RFC 1123 format). |
-| Api-Version | The exact version of the KBMAPI server that processed the request. |
-| Request-Id  | A unique id for this request. |
+**Header**  | **Description**
+------------|-----------------
+Date        | When the response wqas send (RFC 1123 format).
+Api-Version | The exact version of the KBMAPI server that processed the request.
+Request-Id  | A unique id for this request.
 
 
 If the response contains content, the following additional headers will be
 present:
 
 
-| Header         | Description |
-| Content-Length | How much content, in bytes. |
-| Content-Type   | The format of the response (currently always `application/json`). |
-| Content-MD5    | An MD5 checksum of the response. |
+**Header**     | **Description**
+---------------|-----------------
+Content-Length | How much content, in bytes.
+Content-Type   | The format of the response (currently always `application/json`).
+Content-MD5    | An MD5 checksum of the response.
 
 
 #### HTTP Status Codes
 
 KBMAPI will return one of the following codes on an error:
 
-| Code | Description        | Details |
-| 401  | Unauthorized       | Either no Authorization header was send, or the credentials used were invalid. |
-| 405  | Method Not Allowed | Method not supported for the given resource. |
-| 409  | Conflict           | A parameter was missing or invalid. |
-| 500  | Internal Error     | An unexpected error occurred. |
+**Code** | **Description**    | **Details**
+---------|--------------------|-------------
+401      | Unauthorized       | Either no Authorization header was send, or the credentials used were invalid.
+405      | Method Not Allowed | Method not supported for the given resource.
+409      | Conflict           | A parameter was missing or invalid.
+500      | Internal Error     | An unexpected error occurred.
 
 
 If an error occurs, KBMAPI will return a standard JSON error response object
@@ -314,16 +319,17 @@ in the body of the response:
 Where `code` is one of:
 
 
-| Code               | Description |
-| BadRequest         | Bad HTTP was sent. |
-| InternalError      | Something went wrong in KBMAPI. |
-| InvalidArgument    | Bad arguments or a bad value for an argument. |
-| InvalidCredentials | Authentication failed.|
-| InvalidHeader      | A bad HTTP header was sent. |
-| InvalidVersion     | A bad `Api-Version` string was sent. |
-| MissingParameter   | A required parameter was missing. |
-| ResourceNotFound   | The resource was not found. |
-| UnknownError       | Something completely unexpected happened. |
+**Code**           | **Description**
+-------------------|------------------
+BadRequest         | Bad HTTP was sent.
+InternalError      | Something went wrong in KBMAPI.
+InvalidArgument    | Bad arguments or a bad value for an argument.
+InvalidCredentials | Authentication failed.
+InvalidHeader      | A bad HTTP header was sent.
+InvalidVersion     | A bad `Api-Version` string was sent.
+MissingParameter   | A required parameter was missing.
+ResourceNotFound   | The resource was not found.
+UnknownError       | Something completely unexpected happened.
 
 
 ### KBMAPI Endpoints
@@ -344,17 +350,18 @@ signed using the token's `9e` key.  The payload is a JSON object with the
 following fields:
 
 
-| Field       | Required | Description |
-| guid        | Yes      | The GUID of the provisioned token. |
-| cn\_uuid    | Yes      | The UUID if the CN that contains this token. |
-| pin         | Yes      | The pin for the token generated during provisioning. |
-| model       | No       | The model of the token (if known). |
-| serial      | No       | The serial number of the token (if known). |
-| pubkeys     | Yes      | The public keys of the token generated during provisioning. |
-| pubkeys.9a  | Yes      | The `9a` public key of the token. |
-| pubkeys.9d  | Yes      | The `9d` public key of the token. |
-| pubkeys.9e  | Yes      | The `9e` public key of the token. |
-| attestation | No       | The attestation certificates corresponding to the `9a`, `9d`, and `9e` public keys. |
+**Field**   | **Required** | **Description**
+------------|--------------|-----------------
+guid        | Yes          | The GUID of the provisioned token.
+cn\_uuid    | Yes          | The UUID if the CN that contains this token.
+pin         | Yes          | The pin for the token generated during provisioning.
+model       | No           | The model of the token (if known).
+serial      | No           | The serial number of the token (if known).
+pubkeys     | Yes          | The public keys of the token generated during provisioning.
+pubkeys.9a  | Yes          | The `9a` public key of the token.
+pubkeys.9d  | Yes          | The `9d` public key of the token.
+pubkeys.9e  | Yes          | The `9e` public key of the token.
+attestation | No           | The attestation certificates corresponding to the `9a`, `9d`, and `9e` public keys.
 
 
 Note: for the optional fields, they should be supplied with the request when
