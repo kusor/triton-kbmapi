@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright 2018, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -22,7 +22,7 @@ var KBMAPI_PORT = process.env.KBMAPI_PORT || 80;
 // XXX More to come
 var CONFIG = {
     kbmapi: {
-        host: fmt('http://%s:$d', KBMAPI_HOST, KBMAPI_PORT)
+        host: fmt('http://%s:%d', KBMAPI_HOST, KBMAPI_PORT)
     }
 };
 
