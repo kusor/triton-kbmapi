@@ -5,15 +5,15 @@
 -->
 
 <!--
-    Copyright (c) 2018, Joyent, Inc.
+    Copyright 2019 Joyent, Inc.
 -->
 
 # triton-kbmapi: An Earth-shattering key backup and management service
 
-    This repository is part of the Joyent Triton project. See the [contribution
-    guidelines](https://github.com/joyent/triton/blob/master/CONTRIBUTING.md) --
-    *Triton does not use GitHub PRs* -- and general documentation at the main
-    [Triton project](https://github.com/joyent/triton) page.
+This repository is part of the Joyent Triton project. See the [contribution
+guidelines](https://github.com/joyent/triton/blob/master/CONTRIBUTING.md) --
+*Triton does not use GitHub PRs* -- and general documentation at the main
+[Triton project](https://github.com/joyent/triton) page.
 
 ## Development
 
@@ -25,6 +25,10 @@ been warned.
 ## Test
 
     make test
+
+Note you need PostgreSQL installed on the machine you're running the tests from
+due to [node-moray-sandbox](https://github.com/joyent/node-moray-sandbox). See
+that repo's README for the details.
 
 ## Installation
 
