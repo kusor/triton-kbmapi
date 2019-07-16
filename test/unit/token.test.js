@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright 2017, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -20,6 +20,7 @@ var mod_token = require('../lib/token');
 var mod_server = require('../lib/server');
 var test = require('tape');
 
+
 var KBMAPI;
 var MORAY;
 
@@ -31,47 +32,133 @@ var TOKENS = [
         pin: '12345',
         serial: 'abcd12345',
         model: 'ACME insta-token model 1',
-        cn_uuid: '00000000-0000-0000-0000-000000000001'
+        cn_uuid: '00000000-0000-0000-0000-000000000001',
+        pubkeys: {
+            /* eslint-disable max-len */
+            '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC7NhJvp9c5XMOkPLfDvsHZytnY4cWduFRF4KlQIr7LNQnbw50NNlbyhXHzD85KjcztyMoqn9w4XuHdJh4O1lH4=',
+            '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBD+uKKyn5tBNziW21yPt/0FE2LD4l1cWgzONYjn3n8BzSNo/aTzJccki7Q/Lyk7dM8yZLAc/5V/U/QHbLTpexBg=',
+            '9e': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBB5njjQIbEz+ZsYLWRqFJKcbxlsgeCN5Cp0TOb0+e48lFV9mCCgDcoXEJdTGXZooNmLt3cGd7pWmA/jGUAivt14='
+            /* eslint-enable max-len */
+        }
     },
     {
         guid: 'DDA81AA0DB3528479AB6D2AC75624E5E',
         pin: '54321',
         serial: 'deadbeef123',
         model: 'ACME insta-token model 1',
-        cn_uuid: '00000000-0000-0000-0000-000000000002'
+        cn_uuid: '00000000-0000-0000-0000-000000000002',
+        pubkeys: {
+            /* eslint-disable max-len */
+            '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEv/A+0Gc6X5fADdewP1+VJvqgq+ANVCA9rLHxvVkbqbDeFoUBFIPBqKBmpw6kWMb4J6B+4oQTp936+CgdJySz8=',
+            '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFD+ANQt5yC9EvPa5V7OfFpscRDbN9e+ghc0g+u6wVA4CQw1+/s4NRUybf/HIOveYHfpiP9ai5C6HAZYQE28rNY=',
+            '9e': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvEkTUhIwVa6IvySyCyiDMlX+yNuCJgIQNTjey7t2fQNcaQj97N179GnGt/8BFbp2Xpdd9m9eteDzvQi/tn9w8= '
+            /* eslint-enable max-len */
+        }
     }
 ];
 
-test('Initial setup', function tInitialSetup(t) {
+test('Initial setup', function tInitialSetup(suite) {
     h.reset();
 
-    t.test('Create client and server', function tCreateClientServer(t2) {
+    suite.test('Create client and server', function tCreateClientServer(t) {
         h.createClientAndServer(function (err, res, moray) {
             KBMAPI = res;
             MORAY = moray;
-            t2.ifError(err, 'server creation');
-            t2.ok(KBMAPI, 'client');
-            t2.ok(MORAY, 'moray');
-            t2.end();
+            t.ifError(err, 'server creation');
+            t.ok(KBMAPI, 'client');
+            t.ok(MORAY, 'moray');
+            t.end();
         });
     });
 
-    t.test('Create tokens', function tCreateTokens(t2) {
+    suite.test('Create token w/o cn_uuid', function tCreateWOCNUuid(t) {
+        var tk = mod_jsprim.deepCopy(TOKENS[0]);
+        delete tk.cn_uuid;
+        mod_token.create(t, {
+            params: tk,
+            expErr: {
+                code: 'InvalidParameters',
+                message: 'Missing parameters',
+                errors: [ {
+                    field: 'cn_uuid',
+                    code: 'MissingParameter',
+                    message: 'Missing parameter'
+                } ]
+            },
+            expCode: 422
+        });
+    });
+
+    suite.test('Create token w/o pin', function tCreateWOPin(t) {
+        var tk = mod_jsprim.deepCopy(TOKENS[0]);
+        delete tk.pin;
+        mod_token.create(t, {
+            params: tk,
+            expErr: {
+                code: 'InvalidParameters',
+                message: 'Missing parameters',
+                errors: [ {
+                    field: 'pin',
+                    code: 'MissingParameter',
+                    message: 'Missing parameter'
+                } ]
+            },
+            expCode: 422
+        });
+    });
+
+    suite.test('Create token w/o pubkeys', function tCreateWOPubkeys(t) {
+        var tk = mod_jsprim.deepCopy(TOKENS[0]);
+        delete tk.pubkeys;
+        mod_token.create(t, {
+            params: tk,
+            expErr: {
+                code: 'InvalidParameters',
+                message: 'Missing parameters',
+                errors: [ {
+                    field: 'pubkeys',
+                    code: 'MissingParameter',
+                    message: 'Missing parameter'
+                } ]
+            },
+            expCode: 422
+        });
+    });
+
+    suite.test('Create token invalid pubkeys', function tCreateInvalidKeys(t) {
+        var tk = mod_jsprim.deepCopy(TOKENS[0]);
+        tk.pubkeys['9e'] = null;
+        mod_token.create(t, {
+            params: tk,
+            expErr: {
+                code: 'InvalidParameters',
+                message: 'Invalid parameters',
+                errors: [ {
+                    field: 'pubkeys.9e',
+                    code: 'InvalidParameter',
+                    message: 'must be a string'
+                } ]
+            },
+            expCode: 422
+        });
+    });
+
+    suite.test('Create tokens', function tCreateTokens(t) {
         TOKENS.forEach(function eachToken(token) {
-            t2.test('Create token GUID ' + token.guid, function doCreate(t3) {
+            t.test('Create token GUID ' + token.guid, function doCreate(t3) {
                 mod_token.create(t3, {
                     params: token,
                     exp: token
                 });
             });
         });
-        t2.end();
+        t.end();
     });
 
-    t.test('Get token', function tGetToken(t2) {
+    suite.test('Get token', function tGetToken(t) {
         var tok = TOKENS[0];
 
-        mod_token.get(t2, {
+        mod_token.get(t, {
             params: {
                 guid: tok.guid
             },
@@ -79,15 +166,16 @@ test('Initial setup', function tInitialSetup(t) {
                 guid: tok.guid,
                 serial: tok.serial,
                 cn_uuid: tok.cn_uuid,
-                model: tok.model
+                model: tok.model,
+                pubkeys: tok.pubkeys
             }
         });
     });
 
-    t.test('Get token with pin', function tGetTokenPin(t2) {
+    suite.test('Get token with pin', function tGetTokenPin(t) {
         var tok = TOKENS[0];
 
-        mod_token.getPin(t2, {
+        mod_token.getPin(t, {
             params: {
                 guid: tok.guid
             },
@@ -95,22 +183,22 @@ test('Initial setup', function tInitialSetup(t) {
         });
     });
 
-    t.test('List tokens', function tListTokens(t2) {
+    suite.test('List tokens', function tListTokens(t) {
         var tokens = mod_jsprim.deepCopy(TOKENS);
 
         tokens.forEach(function stripPin(tok) {
             delete tok.pin;
         });
 
-        mod_token.list(t2, {
+        mod_token.list(t, {
             params: {},
             deepEqual: true,
             present: tokens
             });
     });
 
-    t.test('Delete token', function tDeleteToken(t2) {
-        mod_token.delete(t2, {
+    suite.test('Delete token', function tDeleteToken(t) {
+        mod_token.delete(t, {
             params: {
                 guid: TOKENS[0].guid
             },
@@ -118,8 +206,8 @@ test('Initial setup', function tInitialSetup(t) {
         });
     });
 
-    t.test('Lookup deleted token', function tGetDeletedToken(t2) {
-        mod_token.get(t2, {
+    suite.test('Lookup deleted token', function tGetDeletedToken(t) {
+        mod_token.get(t, {
             params: {
                 guid: TOKENS[0].guid
             },
