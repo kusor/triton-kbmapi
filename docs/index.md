@@ -1,5 +1,5 @@
 title: Key Backup and Management API (KBMAPI)
-apisections: Usage
+apisections:
 markdown2extras: code-friendly
 ---
 <!--
@@ -36,7 +36,8 @@ as described in <<prov-backups>>.  Second, it is also used by the CN as a
 shared secret with KBMAPI for the purposes of replacing the token information
 of a CN with the data from a new token.
 
-[[kbmapi-history]]
+### kbmapi-history
+
 When tokens are deleted or reinitialized, the old token data should be kept in a
 KBMAPI-maintained history.  This history maintains the token data for an
 amount of time defined by the `KBMAPI_HISTORY_DURATION` SAPI variable.  The
@@ -45,12 +46,12 @@ against accidential token deletion.
 
 #### Attestation
 
-:yubi-attest: https://developers.yubico.com/PIV/Introduction/PIV_attestation.html
+[yubi-attest](https://developers.yubico.com/PIV/Introduction/PIV_attestation.html)
 
 Some tokens have extensions that allow for attestation -- that is a method
 to show that a given certificate was created on the device and not imported.
 For Yubikeys, this is done by creating a special x509 certificate as detailed
-{yubi-attest}[here].
+[here](https://developers.yubico.com/PIV/Introduction/PIV_attestation.html).
 
 If an operator wishes to require attestation, they must set the
 `KBMAPI_REQUIRE_ATTESTATION` SAPI parameter to `true`.  In addition, the
@@ -84,8 +85,7 @@ The token data needs to be presistently store (for hopefully obvious reasons).
 A moray bucket will be used to store the token data. The JSON config of the
 bucket will be:
 
-[source,json]
-----
+```
 {
     "desc": "token data",
     "name": "tokens",
@@ -96,12 +96,11 @@ bucket will be:
         }
     }
 }
-----
+```
 
 The token object itself will be represented using JSON similar to:
 
-[source,json]
-----
+```
 {
     "model": "Yubico Yubikey 4",
     "serial": 5213681,
@@ -126,59 +125,22 @@ The token object itself will be represented using JSON similar to:
        "9a": "-----BEGIN CERTIFICATE-----....."
     }
 }
-----
+```
 
-[options="header"]
-|===
 
-| Field | Required | Description
+| Field            | Required | Description |
+| model            | No       | The model of the token. |
+| serial           | No       | The serial number of the token (if available). |
+| cn\_uuid         | Yes      | The UUID of the compute node that contains this token. |
+| guid             | Yes      | The GUID of the provisioned token. |
+| pin              | Yes      | The pin of the provisioned token. |
+| recovery\_tokens | Yes      | An array of recovery tokens.  Used to recover the encryption keys of a zpool protected by this token.  Also used when replacing a token.  When the recovery configuration is updated, a new recovery token is generated and added to the list. |
+| pubkeys          | Yes      | A JSON object containing the _public_ keys of the token. |
+| pubkeys.9a       | Yes      | The public key used for authentication after the token has been unlocked. |
+| pubkeys.9d       | Yes      | The public key used for encryption after the token has been unlocked. |
+| pubkeys.9e       | Yes      | The public key used for authenticating the token itself without a pin (e.g. used when requesting the pin of a token). |
+| attestation      | No       | The attestation certificates for the corresponding pubkeys. |
 
-| model
-| No
-| The model of the token.
-
-| serial
-| No
-| The serial number of the token (if available).
-
-| cn_uuid
-| Yes
-| The UUID of the compute node that contains this token
-
-| guid
-| Yes
-| The GUID of the provisioned token.
-
-| pin
-| Yes
-| The pin of the provisioned token.
-
-| recovery_tokens
-| Yes
-| An array of recovery tokens.  Used to recover the encryption keys of a zpool protected by this token.  Also used when replacing a token.  When the recovery configuration is updated, a new recovery token is generated and added to the list.
-
-| pubkeys
-| Yes
-| A JSON object containing the _public_ keys of the token
-
-| pubkeys.9a
-| Yes
-| The public key used for authentication after the token has been unlocked.
-
-| pubkeys.9d
-| Yes
-| The public key used for encryption after the token has been unlocked.
-
-| pubkeys.9e
-| Yes
-| The public key used for authenticating the token itself without a pin (e.g.
-used when requesting the pin of a token).
-
-| attestation
-| No
-| The attestation certificates for the corresponding pubkeys.
-
-|===
 
 Note that when provisioning a token, if any of the optional fields are known,
 (e.g. `attestation` or `serial`) they should be supplied during provisioning.
@@ -187,12 +149,11 @@ Note that when provisioning a token, if any of the optional fields are known,
 
 As a failsafe measure, when a token is deleted, the entry from the token
 bucket is saved into a history bucket.  This bucket retains up to
-`KBMAPI_HISTORY_DURATION` days of token data (see <<kbmapi-history>>).
+`KBMAPI_HISTORY_DURATION` days of token data (see [#kbmapi-history]).
 
 The history bucket looks very similar to the token bucket:
 
-[source,json]
-----
+```
 {
     "desc": "token history",
     "name": "token_history",
@@ -204,7 +165,7 @@ The history bucket looks very similar to the token bucket:
         }
     }
 }
-----
+```
 
 The major difference is that the index fields are not unique as well as the
 `active_range` index.  An accidentially deleted token that's restored might end
@@ -214,8 +175,7 @@ will also have multiple history entries.
 The moray entry in the history bucket also looks similar, but not quite the
 same as the token bucket:
 
-[source,json]
-----
+```
 {
     "active_range": "[2019-01-01 00:00:00, 2019-03-01 05:06:07]",
     "model": "Yubico Yubikey 4",
@@ -236,7 +196,7 @@ same as the token bucket:
     },
     "comment": ""
 }
-----
+```
 
 The major difference is the addition of the `active_range` property as well as
 the `comment` property. The `active_range` property represents the (inclusive)
@@ -263,8 +223,7 @@ To support an operator preloading unprovisioned tokens, we track ranges of
 serial numbers that are allowed to be provisioned.  We use a separate
 moray bucket for tracking these ranges of serial numbers:
 
-[source,json]
-----
+```
 {
     "desc": "token serials",
     "name": "token_serial",
@@ -275,39 +234,26 @@ moray bucket for tracking these ranges of serial numbers:
         }
     }
 }
-----
+```
 
 The entries looks similar to:
 
-[source,json]
-----
+```
 {
     "serial_range": "[111111, 123456]",
     "allow": true,
     "ca_dn": "cn=my manf authority",
     "comment": "A useful comment here"
 }
-----
+```
 
-[options="header"]
-|===
 
-| Field | Description
+| Field         | Description |
+| serial\_range | An range of serial numbers.  This range is inclusive. |
+| allow         | Set to true if this range is allowed, or false is this range is blacklisted. |
+| ca\_dn        | The distinguished name (DN) of the attestation CA for this token.  Used to disambiguate any potential duplicate serial numbers between vendors. |
+| comment       | An operator supplied free form comment. |
 
-| serial_range
-| An range of serial numbers.  This range is inclusive.
-
-| allow
-| Set to true if this range is allowed, or false is this range is blacklisted.
-
-| ca_dn
-| The distinguished name (DN) of the attestation CA for this token.  Used to
-disambiguate any potential duplicate serial numbers between vendors.
-
-| comment
-| An operator supplied free form comment
-
-|===
 
 The `kbmadm` command is used to manage this data.
 
@@ -327,109 +273,57 @@ a Manta installation using hermes.
 All response objects are `application/json` encoded HTTP bodies.  In addition,
 all responses will have the following headers:
 
-[options="header"]
-|===
 
-| Header | Description
+| Header      | Description |
+| Date        | When the response wqas send (RFC 1123 format). |
+| Api-Version | The exact version of the KBMAPI server that processed the request. |
+| Request-Id  | A unique id for this request. |
 
-| Date   | When the response wqas send (RFC 1123 format)
-
-| Api-Version | The exact version of the KBMAPI server that processed the request
-
-| Request-Id | A unique id for this request.
-
-|===
 
 If the response contains content, the following additional headers will be
 present:
 
-[options="header"]
-|===
 
-| Header         | Description
+| Header         | Description |
+| Content-Length | How much content, in bytes. |
+| Content-Type   | The format of the response (currently always `application/json`). |
+| Content-MD5    | An MD5 checksum of the response. |
 
-| Content-Length | How much content, in bytes
-
-| Content-Type
-| The format of the response (currently always `application/json`)
-
-| Content-MD5    | An MD5 checksum of the response
-
-|===
 
 #### HTTP Status Codes
 
 KBMAPI will return one of the following codes on an error:
 
-[options="header"]
-|===
+| Code | Description        | Details |
+| 401  | Unauthorized       | Either no Authorization header was send, or the credentials used were invalid. |
+| 405  | Method Not Allowed | Method not supported for the given resource. |
+| 409  | Conflict           | A parameter was missing or invalid. |
+| 500  | Internal Error     | An unexpected error occurred. |
 
-| Code | Description | Details
-
-| 401
-| Unauthorized
-| Either no Authorization header was send, or the credentials used were invalid
-
-| 405
-| Method Not Allowed
-| Method not supported for the given resource
-
-| 409
-| Conflict
-| A parameter was missing or invalid
-
-| 500
-| Internal Error
-| An unexpected error occurred
-
-|===
 
 If an error occurs, KBMAPI will return a standard JSON error response object
 in the body of the response:
 
-[source,json]
-----
+```
 {
     "code": "CODE",
     "message": "human readable string"
 }
-----
+```
 
 Where `code` is one of:
 
-[options="header"]
-|===
 
-| Code | Description
-
-| BadRequest
-| Bad HTTP was sent
-
-| InternalError
-| Something went wrong in KBMAPI
-
-| InvalidArgument
-| Bad arguments or a bad value for an argument
-
-| InvalidCredentials
-| Authentication failed
-
-| InvalidHeader
-| A bad HTTP header was sent
-
-| InvalidVersion
-| A bad `Api-Version` string was sent
-
-| MissingParameter
-| A required parameter was missing
-
-| ResourceNotFound
-| The resource was not found
-
-| UnknownError
-| Something completely unexpected happened
-
-|===
+| Code               | Description |
+| BadRequest         | Bad HTTP was sent. |
+| InternalError      | Something went wrong in KBMAPI. |
+| InvalidArgument    | Bad arguments or a bad value for an argument. |
+| InvalidCredentials | Authentication failed.|
+| InvalidHeader      | A bad HTTP header was sent. |
+| InvalidVersion     | A bad `Api-Version` string was sent. |
+| MissingParameter   | A required parameter was missing. |
+| ResourceNotFound   | The resource was not found. |
+| UnknownError       | Something completely unexpected happened. |
 
 
 ### KBMAPI Endpoints
@@ -449,53 +343,19 @@ Add a new initialized PIV token.  Included in the request should be an
 signed using the token's `9e` key.  The payload is a JSON object with the
 following fields:
 
-[options="header"]
-|===
 
-| Field | Required | Description
+| Field       | Required | Description |
+| guid        | Yes      | The GUID of the provisioned token. |
+| cn\_uuid    | Yes      | The UUID if the CN that contains this token. |
+| pin         | Yes      | The pin for the token generated during provisioning. |
+| model       | No       | The model of the token (if known). |
+| serial      | No       | The serial number of the token (if known). |
+| pubkeys     | Yes      | The public keys of the token generated during provisioning. |
+| pubkeys.9a  | Yes      | The `9a` public key of the token. |
+| pubkeys.9d  | Yes      | The `9d` public key of the token. |
+| pubkeys.9e  | Yes      | The `9e` public key of the token. |
+| attestation | No       | The attestation certificates corresponding to the `9a`, `9d`, and `9e` public keys. |
 
-| guid
-| Yes
-| The GUID of the provisioned token
-
-| cn_uuid
-| Yes
-| The UUID if the CN that contains this token
-
-| pin
-| Yes
-| The pin for the token generated during provisioning
-
-| model
-| No
-| The model of the token (if known)
-
-| serial
-| No
-| The serial number of the token (if known)
-
-| pubkeys
-| Yes
-| The public keys of the token generated during provisioning
-
-| pubkeys.9a
-| Yes
-| The `9a` public key of the token
-
-| pubkeys.9d
-| Yes
-| The `9d` public key of the token
-
-| pubkeys.9e
-| Yes
-| The `9e` public key of the token
-
-| attestation
-| No
-| The attestation certificates corresponding to the `9a`, `9d`, and `9e`
-public keys.
-
-|===
 
 Note: for the optional fields, they should be supplied with the request when
 known.  Unfortunately, there is no simple way to enforce this optionality on
@@ -554,7 +414,7 @@ returned (201) and the generated recovery token is included in the response.
 
 Example request (with attestation)
 
-----
+```
 POST /pivtokens
 Host: kbmapi.mytriton.example.com
 Date: Thu, 13 Feb 2019 20:01:02 GMT
@@ -579,11 +439,11 @@ Accept: application/json
        "9a": "-----BEGIN CERTIFICATE-----....."
     }
 }
-----
+```
 
 An example response might look like:
 
-----
+```
 HTTP/1.1 201 Created
 Location: /pivtokens/97496DD1C8F053DE7450CD854D9C95B4
 Content-Type: application/json
@@ -598,7 +458,7 @@ Response-Time: 42
 {
     "recovery_token": "jmzbhT2PXczgber9jyOSApRP337gkshM7EqK5gOhAcg="
 }
-----
+```
 
 #### UpdateToken (PUT /pivtokens/:guid)
 
@@ -613,7 +473,7 @@ in it's response.
 
 Example request:
 
-----
+```
 PUT /pivtokens/97496DD1C8F053DE7450CD854D9C95B4
 Host: kbmapi.mytriton.example.com
 Date: Thu, 13 Feb 2019 20:01:02 GMT
@@ -638,11 +498,11 @@ Accept: application/json
        "9a": "-----BEGIN CERTIFICATE-----....."
     }
 }
-----
+```
 
 Example response:
 
-----
+```
 HTTP/1.1 200 OK
 Location: /pivtokens/97496DD1C8F053DE7450CD854D9C95B4
 Content-Type: application/json
@@ -653,8 +513,7 @@ Server: Joyent KBMAPI 1.0
 Api-Version: 1.0
 Request-Id: 7e2562ba-731b-c91b-d7c6-90f2fd2d36a0
 Response-Time: 23
-
-----
+```
 
 #### RecoverToken (POST /pivtokens/:guid/recover)
 
@@ -692,7 +551,7 @@ moved to a history entry for that token.
 
 An example request:
 
-----
+```
 POST /pivtokens/97496DD1C8F053DE7450CD854D9C95B4/recover
 Host: kbmapi.mytriton.example.com
 Date: Thu, 13 Feb 2019 20:01:02 GMT
@@ -717,11 +576,11 @@ Accept: application/json
        "9a": "-----BEGIN CERTIFICATE-----....."
     }
 }
-----
+```
 
 And an example response:
 
-----
+```
 HTTP/1.1 201 Created
 Location: /pivtokens/75CA077A14C5E45037D7A0740D5602A5
 Content-Type: application/json
@@ -736,7 +595,7 @@ Response-Time: 42
 {
     "recovery_token": "ShCopwm8QUWsujJQHV7igNxVaWx4ZzmU5SpQtaOC+TY="
 }
-----
+```
 
 Note that the location contains the guid of the _new_ token.
 
@@ -750,18 +609,18 @@ authentication fails, a 401 Unauthorized error + NotAuthorized code is returned.
 
 Example request:
 
-----
+```
 GET /pivtokens/75CA077A14C5E45037D7A0740D5602A5/recover
 Host: kbmapi.mytriton.example.com
 Date: Fri, 5 Jun 2019 11:24:00 GMT
 Authorization: Signature <Base64(rsa(sha256($Date)))>
 Accept-Version: ~1
 Accept: application/json
-----
+```
 
 Example reply:
 
-----
+```
 HTTP/1.1 201 Created
 Location: /pivtokens/75CA077A14C5E45037D7A0740D5602A5/recover
 Content-Type: application/json
@@ -776,7 +635,7 @@ Response-Time: 16
 {
     "recovery_token": "QmUgc3VyZSB0byBkcmluayB5b3VyIG92YWx0aW5l"
 }
-----
+```
 
 XXX: Is 201 the best thing to return here?  Should we consider some mechanism
 in the request/response to make this retry-able w/o generating and saving a new
@@ -793,17 +652,17 @@ supported.
 
 An example request:
 
-----
+```
 GET /pivtokens
 Host: kbmapi.mytriton.example.com
 Date: Wed, 12 Feb 2019 02:04:45 GMT
 Accept-Version: ~1
 Accept: application/json
-----
+```
 
 An example response:
 
-----
+```
 HTTP/1.1 200 Ok
 Location: /pivtokens
 Content-Type: application/json
@@ -842,7 +701,7 @@ Response-Time: 55
         ....
     ]
 }
-----
+```
 
 #### GetToken (GET /pivtokens/:guid)
 
@@ -851,17 +710,17 @@ returned.
 
 Example request:
 
-----
+```
 GET /pivtokens/97496DD1C8F053DE7450CD854D9C95B4
 Host: kbmapi.mytriton.example.com
 Date: Wed, 12 Feb 2019 02:10:32 GMT
 Accept-Version: ~1
 Accept: application/json
-----
+```
 
 Example response:
 
-----
+```
 HTTP/1.1 200 Ok
 Location: /pivtokens/97496DD1C8F053DE7450CD854D9C95B4
 Content-Type: application/json
@@ -884,7 +743,7 @@ Response-Time: 55
       "9a": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYA..."
    }
 }
-----
+```
 
 #### GetTokenPin (GET /pivtokens/:guid/pin)
 
@@ -899,18 +758,18 @@ keys on the token.
 
 An example request:
 
-----
+```
 GET /pivtokens/97496DD1C8F053DE7450CD854D9C95B4/pin
 Host: kbmapi.mytriton.example.com
 Date: Wed, 12 Feb 2019 02:11:32 GMT
 Accept-Version: ~1
 Accept: application/json
 Authorization: Signature <Base64(rsa(sha256($Date)))>
-----
+```
 
 An example reply:
 
-----
+```
 HTTP/1.1 200 OK
 Location: /pivtokens/97496DD1C8F053DE7450CD854D9C95B4/pin
 Content-Type: application/json
@@ -937,7 +796,7 @@ Response-Time: 1
        "9a": "-----BEGIN CERTIFICATE-----....."
     }
 }
-----
+```
 
 #### DeleteToken (DELETE /pivtokens/:guid)
 
@@ -947,18 +806,18 @@ key of the token.
 
 Sample request:
 
-----
+```
 DELETE /pivtokens/97496DD1C8F053DE7450CD854D9C95B4 HTTP/1.1
 Host: kbmapi.mytriton.example.com
 Accept: application/json
 Authorization: Signature <Base64(rsa(sha256($Date)))>
 Api-Version: ~1
 Content-Length: 0
-----
+```
 
 Sample response:
 
-----
+```
 HTTP/1.1 204 No Content
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Headers: Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, Api-Version, Response-Time
@@ -970,6 +829,18 @@ Server: Joyent KBMAPI 1.0.0
 Api-Version: 1.0.0
 Request-Id: f36b8a41-5841-6c05-a116-b517bf23d4ab
 Response-Time: 997
-----
+```
 
 Note: alternatively, an operator can manually run kbmadm to delete an entry.
+
+## Development status
+
+- Not yet implemented authentication using 9E pubkey for `DeleteToken`, `GetTokenPin`, `CreateRecoveryToken`, `UpdateToken` and `CreateToken`.
+- Not yet implemented authentication using `recovery_token` for `RecoverToken`.
+- Token history bucket must be created. Tokens should be moved into history once those have been _recovered_.
+- Decide if a token destroyed using `DeleteToken` should also be archived.
+- `token_serial` bucket needs to be created and end-point to access tokens serial should be provided.
+- Decide if `CreateToken` should return the whole token object or just the `recovery_token` created.
+- Anyway, we need to generate a `recovery_token` when we create a new token.
+- SAPI configuration for attestation is not present and none of the associated functionalities implemented.
+
