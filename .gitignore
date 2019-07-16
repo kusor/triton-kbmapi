@@ -10,3 +10,4 @@ cscope.po.out
 cscope.out
 man
 smf/manifests/kbmapi.xml
+coverage/*

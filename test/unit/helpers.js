@@ -37,7 +37,7 @@ function createClientAndServer(opts, callback) {
             return;
         }
 
-        callback(null, res.client, res.moray);
+        callback(null, res.client, res.moray, res.server);
     });
 }
 

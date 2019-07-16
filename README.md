@@ -30,6 +30,14 @@ Note you need PostgreSQL installed on the machine you're running the tests from
 due to [node-moray-sandbox](https://github.com/joyent/node-moray-sandbox). See
 that repo's README for the details.
 
+Unit tests can also run with:
+
+    npm run-script test
+
+and a similar command can be used to run tests with code coverage:
+
+    npm run-script coverage
+
 ## Installation
 
 To warn again, this is a work in progress prototype.  You should **not** attempt
