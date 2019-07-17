@@ -171,7 +171,8 @@ test('Initial setup', function tInitialSetup(suite) {
                 cn_uuid: tok.cn_uuid,
                 model: tok.model,
                 pubkeys: tok.pubkeys
-            }
+            },
+            fillIn: ['recovery_tokens']
         });
     });
 

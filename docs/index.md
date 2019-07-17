@@ -462,8 +462,23 @@ Api-Version: 1.0
 Request-Id: b4dd3618-78c2-4cf5-a20c-b822f6cd5fb2
 Response-Time: 42
 
+
 {
-    "recovery_token": "jmzbhT2PXczgber9jyOSApRP337gkshM7EqK5gOhAcg="
+    "model": "Yubico Yubikey 4",
+    "serial": 5213681,
+    "cn_uuid": "15966912-8fad-41cd-bd82-abe6468354b5",
+    "guid": "97496DD1C8F053DE7450CD854D9C95B4",
+    "pubkeys": {
+       "9e": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYA...",
+       "9d": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYA...",
+       "9a": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYA..."
+    },
+    "recovery_tokens": [
+        {
+            created: 1563348710384,
+            token: 'cefb9c2001b535b697d5a13ba6855098e8c58feb800705092db061343bb7daa10e52a97ed30f2cf1'
+        }
+    ]
 }
 ```
 
@@ -847,7 +862,4 @@ Note: alternatively, an operator can manually run kbmadm to delete an entry.
 - Token history bucket must be created. Tokens should be moved into history once those have been _recovered_.
 - Decide if a token destroyed using `DeleteToken` should also be archived.
 - `token_serial` bucket needs to be created and end-point to access tokens serial should be provided.
-- Decide if `CreateToken` should return the whole token object or just the `recovery_token` created.
-- Anyway, we need to generate a `recovery_token` when we create a new token.
 - SAPI configuration for attestation is not present and none of the associated functionalities implemented.
-

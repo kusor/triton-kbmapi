@@ -27,7 +27,7 @@ function createToken(t, opts, callback) {
     var client = opts.client || mod_client.get();
 
     log.debug({ params: opts.params }, 'creating pivtoken');
-    opts.fillIn = [ 'guid' ];
+    opts.fillIn = [ 'guid', 'recovery_tokens' ];
     opts.type = TYPE;
     opts.reqType = 'create';
 
