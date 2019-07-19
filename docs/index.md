@@ -857,9 +857,16 @@ Note: alternatively, an operator can manually run kbmadm to delete an entry.
 
 ## Development status
 
-- Not yet implemented authentication using 9E pubkey for `DeleteToken`, `GetTokenPin`, `CreateRecoveryToken`, `UpdateToken` and `CreateToken`.
+- Not yet implemented authentication using 9E pubkey for `DeleteToken`,
+  `GetTokenPin`, `CreateRecoveryToken`, `UpdateToken` and `CreateToken`.
 - Not yet implemented authentication using `recovery_token` for `RecoverToken`.
-- Token history bucket must be created. Tokens should be moved into history once those have been _recovered_.
+- Token history bucket must be created. Tokens should be moved into history
+  once those have been _recovered_.
 - Decide if a token destroyed using `DeleteToken` should also be archived.
-- `token_serial` bucket needs to be created and end-point to access tokens serial should be provided.
-- SAPI configuration for attestation is not present and none of the associated functionalities implemented.
+- `token_serial` bucket needs to be created and end-point to access tokens
+  serial should be provided.
+- SAPI configuration for attestation is not present and none of the associated
+  functionalities implemented.
+- Shouldn't kbmapi client be its own node-module separated from node-sdc-clients?
+  If I'm not on a mistake, we're tryign to move towards that path. That could be
+  done by placing the client into this same repo and adding a concrete package.

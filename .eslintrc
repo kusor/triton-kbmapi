@@ -6,7 +6,7 @@
         "plugin:joyent/lint"
     ],
     "parserOptions": {
-        "ecmaVersion": 5,
+        "ecmaVersion": 6,
         "sourceType": "script",
         "ecmaFeatures": {
         }
@@ -22,6 +22,6 @@
         "func-style": [ "error", "declaration" ],
 
         // Checks disabled as things get slowly cleaned up:
-        "consistent-return": "off"
+        "consistent-return": 1
     }
 }

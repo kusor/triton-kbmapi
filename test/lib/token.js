@@ -36,10 +36,13 @@ function createToken(t, opts, callback) {
     delete params.guid;
 
     if (!opts.desc && opts.expErr) {
-        opts.desc = JSON.stringify(opts.params);
+        // opts.desc = JSON.stringify(opts.params);
     }
 
-    client.createToken(guid, params, common.reqOpts(t, opts),
+    client.createToken(Object.assign({
+        guid: guid,
+        token: params
+    }, common.reqOpts(t, opts)),
         common.afterAPIcall.bind(null, t, opts, callback));
 }
 
@@ -65,7 +68,9 @@ function getToken(t, opts, callback) {
     opts.type = TYPE;
     opts.reqType = 'get';
 
-    client.getToken(guid, common.reqOpts(t, opts),
+    client.getToken(Object.assign({
+        guid: guid
+    }, common.reqOpts(t, opts)),
         common.afterAPIcall.bind(null, t, opts, callback));
 }
 
@@ -78,7 +83,10 @@ function getTokenPin(t, opts, callback) {
     opts.type = TYPE;
     opts.reqType = 'get';
 
-    client.getTokenPin(guid, common.reqOpts(t, opts),
+
+    client.getTokenPin(Object.assign({
+        guid: guid
+    }, common.reqOpts(t, opts)),
         common.afterAPIcall.bind(null, t, opts, callback));
 }
 
@@ -99,8 +107,10 @@ function listTokens(t, opts, callback) {
 
     log.debug({ params: params }, 'list tokens');
 
-    client.getTokens(params, common.reqOpts(t, opts),
-        common.afterAPIlist.bind(null, t, opts, callback));
+    client.listTokens(Object.assign({
+        params: params
+    }, common.reqOpts(t, opts)),
+        common.afterAPIcall.bind(null, t, opts, callback));
 }
 
 function deleteToken(t, opts, callback) {
@@ -116,7 +126,10 @@ function deleteToken(t, opts, callback) {
 
     delete params.guid;
 
-    client.deleteToken(guid, params, common.reqOpts(t, opts),
+    client.deleteToken(Object.assign({
+        guid: guid,
+        params: params
+    }, common.reqOpts(t, opts)),
         common.afterAPIdelete.bind(null, t, opts, callback));
 }
 

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright 2018, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -14,7 +14,7 @@
 
 'use strict';
 
-var KBMAPI = require('sdc-clients').KBMAPI;
+var KBMAPI = require('../../client/');
 
 var assert = require('assert-plus');
 var clone = require('clone');
@@ -72,7 +72,7 @@ function addToState(opts, type, obj) {
 /**
  * Shared test code for after API methods are called
  */
-function afterAPIcall(t, opts, callback, err, obj, req, res) {
+function afterAPIcall(t, opts, callback, err, obj, res) {
     var desc = opts.desc ? (' ' + opts.desc) : '';
     assert.string(opts.reqType, 'opts.reqType');
     assert.string(opts.type, 'opts.type');
@@ -84,18 +84,16 @@ function afterAPIcall(t, opts, callback, err, obj, req, res) {
             var code = opts.expCode || 422;
             t.equal(err.statusCode, code, type + 'status code' + desc);
             t.deepEqual(err.body, opts.expErr, type + 'error body' + desc);
-        }
-
-        if (obj) {
+        } else if (obj) {
             t.deepEqual(obj, {}, 'body (error expected)' + desc);
         }
 
-        done(err, null, req, res, opts, t, callback);
+        done(err, null, res, opts, t, callback);
         return;
     }
 
     if (ifErr(t, err, type + desc)) {
-        done(err, null, req, res, opts, t, callback);
+        done(err, null, res, opts, t, callback);
         return;
     }
 
@@ -160,13 +158,13 @@ function afterAPIcall(t, opts, callback, err, obj, req, res) {
         addToState(opts, opts.type + 's', obj);
     }
 
-    done(null, obj, req, res, opts, t, callback);
+    done(null, obj, res, opts, t, callback);
 }
 
 /**
  * Shared test code for after API delete methods are called
  */
-function afterAPIdelete(t, opts, callback, err, obj, req, res) {
+function afterAPIdelete(t, opts, callback, err, res) {
     var desc = opts.desc ? (' ' + opts.desc) : '';
     assert.string(opts.type, 'opts.type');
     assert.string(opts.id, 'opts.id');
@@ -180,31 +178,31 @@ function afterAPIdelete(t, opts, callback, err, obj, req, res) {
             t.deepEqual(err.body, opts.expErr, 'error body');
         }
 
-        done(err, null, req, res, opts, t, callback);
+        done(err, null, res, opts, t, callback);
         return;
     }
 
     // mightNotExist allows for calling mod_whatever.dellAllCreated() when
     // some of the created objects were actually deleted during the test:
     if (opts.mightNotExist && err && err.restCode === 'ResourceNotFound') {
-        done(null, obj, req, res, opts, t, callback);
+        done(null, null, res, opts, t, callback);
         return;
     }
 
     if (ifErr(t, err, type + desc)) {
-        done(err, null, req, res, opts, t, callback);
+        done(err, null, res, opts, t, callback);
         return;
     }
 
     t.equal(res.statusCode, 204, type + 'status code' + desc);
 
-    done(null, obj, req, res, opts, t, callback);
+    done(null, null, res, opts, t, callback);
 }
 
 /**
  * Shared test code for after API list methods are called
  */
-function afterAPIlist(t, opts, callback, err, obj, req, res) {
+function afterAPIlist(t, opts, callback, err, obj, res) {
     assert.string(opts.type, 'opts.type');
     assert.string(opts.id, 'opts.id');
     assert.optionalArray(opts.present, 'opts.present');
@@ -221,12 +219,12 @@ function afterAPIlist(t, opts, callback, err, obj, req, res) {
             t.deepEqual(err.body, opts.expErr, type + 'error body' + desc);
         }
 
-        done(err, null, req, res, opts, t, callback);
+        done(err, null, res, opts, t, callback);
         return;
     }
 
     if (ifErr(t, err, type + desc)) {
-        done(err, null, req, res, opts, t, callback);
+        done(err, null, res, opts, t, callback);
         return;
     }
 
@@ -302,7 +300,7 @@ function afterAPIlist(t, opts, callback, err, obj, req, res) {
         }
     }
 
-    done(null, obj, req, res, opts, t, callback);
+    done(null, obj, res, opts, t, callback);
 }
 
 /**
@@ -339,9 +337,9 @@ function assertArgsList(t, opts, callback) {
 /**
  * Finish a test
  */
-function done(err, obj, req, res, opts, t, callback) {
+function done(err, obj, res, opts, t, callback) {
     if (callback) {
-        callback(opts.continueOnErr ? null : err, obj, req, res);
+        callback(opts.continueOnErr ? null : err, obj, res);
         return;
     }
 
