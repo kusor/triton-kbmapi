@@ -14,14 +14,83 @@
 
 'use strict';
 
-var assert = require('assert-plus');
-// var httpSignature = require('http-signature');
-var restifyClients = require('restify-clients');
+const cp = require('child_process');
+const util = require('util');
+const format = util.format;
 
-var util = require('util');
-var format = util.format;
+const assert = require('assert-plus');
+const httpSignature = require('http-signature');
+const jsprim = require('jsprim');
+const restifyClients = require('restify-clients');
+
+const AUTHZ_FMT =
+  'Signature keyId="%s",algorithm="%s",headers="%s",signature="%s"';
+
 
 // --- Exported Client
+
+
+/*
+ * This is an example from kbmd:
+ * date="$(LC_TIME=C TZ=GMT date +"%a, %d %b %Y %T %Z")"
+ * sig="$(echo $date | $PIVYTOOL sign 9e | $OPENSSL enc -base64 -A)"
+ *
+ * pin=$($CURL -sS \
+ *  -H "Date: $date" \
+ *  -H "Authorization: $sig" \
+ *  "$url" | json pin) || exit 1
+ *
+ */
+
+var SIGNER;
+var PRIVKEY;
+var PUBKEY;
+var OPENSSL;
+var PIVYTOOL;
+
+function requestSigner(req) {
+    var signatureRequired = {
+        'get': ['/auth'],
+        'post': ['/pivtokens'],
+        'put': [],
+        'delete': []
+    };
+
+    if (signatureRequired[req.method.toLowerCase()].indexOf(req.path) === -1) {
+        return false;
+    }
+
+    if (SIGNER === 'httpSignature') {
+        httpSignature.signRequest(req, {
+            key: PRIVKEY,
+            keyId: httpSignature.sshKeyFingerprint(PUBKEY)
+        });
+    } else {
+        // XXX: WIP Still getting 411 requests signed like this:
+        var date = req.getHeader('Date');
+        if (!date) {
+            date = jsprim.rfc1123(new Date());
+            req.setHeader('Date', date);
+        }
+
+
+        var cmd = format('echo %s | %s sign 9e | %s enc -base64 -A',
+                         date, PIVYTOOL, OPENSSL);
+        try {
+            var result = cp.execSync(cmd);
+        } catch (err) {
+            req.log.error({err: err}, 'PIVYTOOL sign error');
+            return false;
+        }
+
+        req.setHeader('Authorization', util.format(AUTHZ_FMT,
+            httpSignature.sshKeyFingerprint(PUBKEY),
+           'ecdsa-sha256',
+           'date',
+           result.toString().trim()));
+    }
+    return true;
+}
 
 function KBMAPI(options) {
     assert.object(options, 'options');
@@ -34,6 +103,10 @@ function KBMAPI(options) {
         };
     }
 
+    options.signRequest = function signRequest(req) {
+        requestSigner(req);
+    };
+
     this.client = restifyClients.createJsonClient(options);
 }
 
@@ -42,7 +115,12 @@ function KBMAPI(options) {
  *
  * @param {Object} opts object containing:
  *      - {String} guid: (required) the guid of the token.
- *      - {Object} token: the token to be created.
+ *      - {Object} token: (required) the token to be created.
+ *      - {Function} signer: (optional) http request signer. Required only when
+ *        the POST request will attempt to override an existing token. This
+ *        signer object should be able to receive a HTTP Date and use it to
+ *        generate the HTTP Signature Auth header which will be used to perform
+ *        the HTTP request authentication using the token 9e pubkey.
  * @param {Function} cb: of the form f(err, token, res)
  *
  */
@@ -54,11 +132,15 @@ KBMAPI.prototype.createToken = function createToken(opts, cb) {
 
     opts.token.guid = opts.guid;
 
-    var reqOpts = {
+    // XXX: Modify to properly extract these options for all methods needing:
+    PRIVKEY = opts.privkey;
+    PUBKEY = opts.token.pubkeys['9e'];
+
+    var reqOpts = Object.assign(opts, {
         path: '/pivtokens',
         data: opts.token,
         method: 'POST'
-    };
+    });
 
     this._request(reqOpts, function reqCb(err, req, res, body) {
         cb(err, body, res);
@@ -75,6 +157,7 @@ KBMAPI.prototype.createToken = function createToken(opts, cb) {
 KBMAPI.prototype.deleteToken = function deleteToken(opts, cb) {
     assert.object(opts, 'opts');
     assert.string(opts.guid, 'opts.guid');
+    assert.object(opts.token, 'opts.token');
     assert.func(cb, 'cb');
 
 
@@ -158,6 +241,25 @@ KBMAPI.prototype.getTokenPin = function getTokenPin(opts, cb) {
 };
 
 
+
+KBMAPI.prototype.testAuth = function getToken(opts, cb) {
+    assert.object(opts, 'opts');
+    assert.func(cb, 'cb');
+
+    var reqOpts = {
+        path: '/auth',
+        method: 'GET',
+        data: opts.token
+    };
+
+    PRIVKEY = opts.privkey;
+    PUBKEY = opts.token.pubkeys['9e'];
+
+    this._request(reqOpts, function reqCb(err, req, res, body) {
+        cb(err, body, res);
+    });
+};
+
 /**
  * KBMAPI request wrapper - modeled after http.request.
  *
@@ -183,7 +285,11 @@ KBMAPI.prototype._request = function _request(opts, cb) {
     assert.object(opts, 'opts');
     assert.optionalObject(opts.data, 'opts.data');
     assert.optionalString(opts.method, 'opts.method');
+    assert.string(opts.path, 'opts.path');
     assert.optionalObject(opts.headers, 'opts.headers');
+    assert.optionalString(opts.privkey, 'opts.privkey');
+    assert.optionalString(opts.pivytool, 'opts.piviTool');
+    assert.optionalString(opts.openssl, 'opts.openssl');
     assert.func(cb, 'cb');
 
     var method = (opts.method || 'GET').toLowerCase();
@@ -191,73 +297,35 @@ KBMAPI.prototype._request = function _request(opts, cb) {
         'invalid HTTP method given');
     var clientFnName = (method === 'delete' ? 'del' : method);
 
-/*
-    self._authHeaders(method, opts.path, function (err, headers) {
-        if (err) {
-            cb(err);
-            return;
-        }
+    SIGNER = opts.privkey ? 'httpSignature' : 'pivytool';
 
-        if (opts.headers) {
-            headers = Object.assign(headers, opts.headers);
-        }
-*/
-        var reqOpts = {
-            path: opts.path// ,
-//            headers: headers
-        };
+    var reqOpts = {
+        token: opts.data,
+        method: method,
+        path: opts.path
+    };
 
-        if (opts.data) {
-            self.client[clientFnName](reqOpts, opts.data, cb);
-        } else {
-            self.client[clientFnName](reqOpts, cb);
-        }
-//    });
-};
-/*
-KBMAPI.prototype._authHeaders = function _authHeaders(method, path, cb) {
+    if (opts.headers) {
+        reqOpts.headers = opts.headers;
+    }
 
-    assert.string(method, 'method');
-    assert.string(path, 'path');
-    assert.func(cb, 'cb');
-
-    var headers = {};
-
-    var rs;
-    if (this.principal.sign !== undefined) {
-        rs = auth.requestSigner({
-            sign: this.principal.sign
-        });
-    } else if (this.principal.keyPair !== undefined) {
-        try {
-            rs = this.principal.keyPair.createRequestSigner({
-                user: this.principal.account,
-                subuser: this.principal.user
-            });
-        } catch (signerErr) {
-            callback(new errors.SigningError(signerErr));
-            return;
-        }
+    if (opts.privkey) {
+        PRIVKEY = opts.privkey;
+    } else {
+        PIVYTOOL = process.env.PIVYTOOL ||
+                    opts.pivytool ||
+                    '/usr/sbin/pivy-tool';
+        OPENSSL = process.env.OPENSSL ||
+                    opts.openssl ||
+                    '/usr/bin/openssl';
     }
 
 
-    httpSignature.sign(req, {
-      key: key,
-      keyId: './cert.pem'
-    });
-
-    rs.writeTarget(method, path);
-    headers.date = rs.writeDateHeader();
-
-    rs.sign(function (err, authz) {
-        if (err || !authz) {
-            cb(new errors.SigningError(err));
-            return;
-        }
-        headers.authorization = authz;
-        cb(null, headers);
-    });
+    if (opts.data) {
+        self.client[clientFnName](reqOpts, opts.data, cb);
+    } else {
+        self.client[clientFnName](reqOpts, cb);
+    }
 };
-*/
 
 module.exports = KBMAPI;

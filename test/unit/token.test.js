@@ -14,10 +14,15 @@
 
 'use strict';
 
+var fs = require('fs');
+var path = require('path');
+var util = require('util');
+
 var h = require('./helpers');
 var mod_jsprim = require('jsprim');
 var mod_token = require('../lib/token');
 var mod_server = require('../lib/server');
+var mod_common = require('../lib/common');
 var test = require('tape');
 
 
@@ -38,14 +43,9 @@ var TOKENS = [
             /* eslint-disable max-len */
             '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC7NhJvp9c5XMOkPLfDvsHZytnY4cWduFRF4KlQIr7LNQnbw50NNlbyhXHzD85KjcztyMoqn9w4XuHdJh4O1lH4=',
             '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBD+uKKyn5tBNziW21yPt/0FE2LD4l1cWgzONYjn3n8BzSNo/aTzJccki7Q/Lyk7dM8yZLAc/5V/U/QHbLTpexBg=',
-            '9e': 'ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAB9Y/8bI7ui8MQwTZsDQPCgaz7j5hLmHQ9uDBC5xpL0NL3lG5w2HyepOJAv98d0w9/XIZ9TVP9B9/hVkhjOBWW+SwBNVBoiDhyXwFfQeufbrY44bVN7iV4sCp7imAkNeW6CDAWwkd0EjCQ+H3g0Y+hGRBlbrSC1Wp1aIoITMPTl9v8Umg== kbmapi'
-        },
-        attestation: {
-            '9a': '-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS\n1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQAfWP/GyO7ovDEME2bA0DwoGs+4+YS\n5h0PbgwQucaS9DS95RucNh8nqTiQL/fHdMPf1yGfU1T/Qff4VZIYzgVlvksATVQaIg4cl8\nBX0Hrn262OOG1Te4leLAqe4pgJDXluggwFsJHdBIwkPh94NGPoRkQZW60gtVqdWiKCEzD0\n5fb/FJoAAAEIYzXfi2M134sAAAATZWNkc2Etc2hhMi1uaXN0cDUyMQAAAAhuaXN0cDUyMQ\nAAAIUEAH1j/xsju6LwxDBNmwNA8KBrPuPmEuYdD24MELnGkvQ0veUbnDYfJ6k4kC/3x3TD\n39chn1NU/0H3+FWSGM4FZb5LAE1UGiIOHJfAV9B659utjjhtU3uJXiwKnuKYCQ15boIMBb\nCR3QSMJD4feDRj6EZEGVutILVanVoighMw9OX2/xSaAAAAQgCbKYtggG2cX/RQ9oY0eNsv\n9I6oG/Gnx8hEZP8MCeNpPU8yfymcdnVHINtV19g1HGqChnXAA9Bt1ILt+KQToF/DTwAAAA\nZrYm1hcGkBAgME\n-----END OPENSSH PRIVATE KEY-----',
-            '9d': '-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS\n1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQAfWP/GyO7ovDEME2bA0DwoGs+4+YS\n5h0PbgwQucaS9DS95RucNh8nqTiQL/fHdMPf1yGfU1T/Qff4VZIYzgVlvksATVQaIg4cl8\nBX0Hrn262OOG1Te4leLAqe4pgJDXluggwFsJHdBIwkPh94NGPoRkQZW60gtVqdWiKCEzD0\n5fb/FJoAAAEIYzXfi2M134sAAAATZWNkc2Etc2hhMi1uaXN0cDUyMQAAAAhuaXN0cDUyMQ\nAAAIUEAH1j/xsju6LwxDBNmwNA8KBrPuPmEuYdD24MELnGkvQ0veUbnDYfJ6k4kC/3x3TD\n39chn1NU/0H3+FWSGM4FZb5LAE1UGiIOHJfAV9B659utjjhtU3uJXiwKnuKYCQ15boIMBb\nCR3QSMJD4feDRj6EZEGVutILVanVoighMw9OX2/xSaAAAAQgCbKYtggG2cX/RQ9oY0eNsv\n9I6oG/Gnx8hEZP8MCeNpPU8yfymcdnVHINtV19g1HGqChnXAA9Bt1ILt+KQToF/DTwAAAA\nZrYm1hcGkBAgME\n-----END OPENSSH PRIVATE KEY-----',
-            '9e': '-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS\n1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQAfWP/GyO7ovDEME2bA0DwoGs+4+YS\n5h0PbgwQucaS9DS95RucNh8nqTiQL/fHdMPf1yGfU1T/Qff4VZIYzgVlvksATVQaIg4cl8\nBX0Hrn262OOG1Te4leLAqe4pgJDXluggwFsJHdBIwkPh94NGPoRkQZW60gtVqdWiKCEzD0\n5fb/FJoAAAEIYzXfi2M134sAAAATZWNkc2Etc2hhMi1uaXN0cDUyMQAAAAhuaXN0cDUyMQ\nAAAIUEAH1j/xsju6LwxDBNmwNA8KBrPuPmEuYdD24MELnGkvQ0veUbnDYfJ6k4kC/3x3TD\n39chn1NU/0H3+FWSGM4FZb5LAE1UGiIOHJfAV9B659utjjhtU3uJXiwKnuKYCQ15boIMBb\nCR3QSMJD4feDRj6EZEGVutILVanVoighMw9OX2/xSaAAAAQgCbKYtggG2cX/RQ9oY0eNsv\n9I6oG/Gnx8hEZP8MCeNpPU8yfymcdnVHINtV19g1HGqChnXAA9Bt1ILt+KQToF/DTwAAAA\nZrYm1hcGkBAgME\n-----END OPENSSH PRIVATE KEY-----'
-        }
+            '9e': fs.readFileSync(path.resolve(__dirname, '../one_token_test_edcsa.pub'), 'ascii')
             /* eslint-enable max-len */
+        }
     },
     {
         guid: 'DDA81AA0DB3528479AB6D2AC75624E5E',
@@ -57,15 +57,17 @@ var TOKENS = [
             /* eslint-disable max-len */
             '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEv/A+0Gc6X5fADdewP1+VJvqgq+ANVCA9rLHxvVkbqbDeFoUBFIPBqKBmpw6kWMb4J6B+4oQTp936+CgdJySz8=',
             '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFD+ANQt5yC9EvPa5V7OfFpscRDbN9e+ghc0g+u6wVA4CQw1+/s4NRUybf/HIOveYHfpiP9ai5C6HAZYQE28rNY=',
-            '9e': 'ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAGlwHZ2LREtifMUWFc0f32GCt68eZOXEkx4QkcYVSHsJPpVZKH6OrKgUTtyI7fYYIzsNKrhDjqQHplCdVgMLoxxMwHX/ooILjT5MXnqLOJBjX7B1kB/BU1+RqDFbsNIIdCDtdPIpHYWutyGWfldnBk38akryV6lHFbfXExjp1PhfEI9Fg== kbmapi'
-        },
-        attestation: {
-            '9a': '-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS\n1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQBpcB2di0RLYnzFFhXNH99hgrevHmT\nlxJMeEJHGFUh7CT6VWSh+jqyoFE7ciO32GCM7DSq4Q46kB6ZQnVYDC6McTMB1/6KCC40+T\nF56iziQY1+wdZAfwVNfkagxW7DSCHQg7XTyKR2Frrchln5XZwZN/GpK8lepRxW31xMY6dT\n4XxCPRYAAAEIKzUO0is1DtIAAAATZWNkc2Etc2hhMi1uaXN0cDUyMQAAAAhuaXN0cDUyMQ\nAAAIUEAaXAdnYtES2J8xRYVzR/fYYK3rx5k5cSTHhCRxhVIewk+lVkofo6sqBRO3Ijt9hg\njOw0quEOOpAemUJ1WAwujHEzAdf+igguNPkxeeos4kGNfsHWQH8FTX5GoMVuw0gh0IO108\nikdha63IZZ+V2cGTfxqSvJXqUcVt9cTGOnU+F8Qj0WAAAAQTyu0N7uErQ/6QmyX5shig9O\nyYpQMhCpgoOYI0QggbPovEonxYVMaUMAbXoQwYQTnSafu+ud8W4x47ILM84yaacRAAAABm\ntibWFwaQECAwQF\n-----END OPENSSH PRIVATE KEY-----\n',
-            '9d': '-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS\n1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQBpcB2di0RLYnzFFhXNH99hgrevHmT\nlxJMeEJHGFUh7CT6VWSh+jqyoFE7ciO32GCM7DSq4Q46kB6ZQnVYDC6McTMB1/6KCC40+T\nF56iziQY1+wdZAfwVNfkagxW7DSCHQg7XTyKR2Frrchln5XZwZN/GpK8lepRxW31xMY6dT\n4XxCPRYAAAEIKzUO0is1DtIAAAATZWNkc2Etc2hhMi1uaXN0cDUyMQAAAAhuaXN0cDUyMQ\nAAAIUEAaXAdnYtES2J8xRYVzR/fYYK3rx5k5cSTHhCRxhVIewk+lVkofo6sqBRO3Ijt9hg\njOw0quEOOpAemUJ1WAwujHEzAdf+igguNPkxeeos4kGNfsHWQH8FTX5GoMVuw0gh0IO108\nikdha63IZZ+V2cGTfxqSvJXqUcVt9cTGOnU+F8Qj0WAAAAQTyu0N7uErQ/6QmyX5shig9O\nyYpQMhCpgoOYI0QggbPovEonxYVMaUMAbXoQwYQTnSafu+ud8W4x47ILM84yaacRAAAABm\ntibWFwaQECAwQF\n-----END OPENSSH PRIVATE KEY-----\n',
-            '9e': '-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAArAAAABNlY2RzYS\n1zaGEyLW5pc3RwNTIxAAAACG5pc3RwNTIxAAAAhQQBpcB2di0RLYnzFFhXNH99hgrevHmT\nlxJMeEJHGFUh7CT6VWSh+jqyoFE7ciO32GCM7DSq4Q46kB6ZQnVYDC6McTMB1/6KCC40+T\nF56iziQY1+wdZAfwVNfkagxW7DSCHQg7XTyKR2Frrchln5XZwZN/GpK8lepRxW31xMY6dT\n4XxCPRYAAAEIKzUO0is1DtIAAAATZWNkc2Etc2hhMi1uaXN0cDUyMQAAAAhuaXN0cDUyMQ\nAAAIUEAaXAdnYtES2J8xRYVzR/fYYK3rx5k5cSTHhCRxhVIewk+lVkofo6sqBRO3Ijt9hg\njOw0quEOOpAemUJ1WAwujHEzAdf+igguNPkxeeos4kGNfsHWQH8FTX5GoMVuw0gh0IO108\nikdha63IZZ+V2cGTfxqSvJXqUcVt9cTGOnU+F8Qj0WAAAAQTyu0N7uErQ/6QmyX5shig9O\nyYpQMhCpgoOYI0QggbPovEonxYVMaUMAbXoQwYQTnSafu+ud8W4x47ILM84yaacRAAAABm\ntibWFwaQECAwQF\n-----END OPENSSH PRIVATE KEY-----\n'
+            '9e': fs.readFileSync(path.resolve(__dirname, '../another_token_test_edcsa.pub'), 'ascii')
             /* eslint-enable max-len */
         }
     }
+];
+
+var privKeys = [
+    fs.readFileSync(path.resolve(__dirname, '../one_token_test_edcsa'),
+        'ascii'),
+    fs.readFileSync(path.resolve(__dirname, '../another_token_test_edcsa'),
+        'ascii')
 ];
 
 test('Initial setup', function tInitialSetup(suite) {
@@ -98,7 +100,8 @@ test('Initial setup', function tInitialSetup(suite) {
                     message: 'Missing parameter'
                 } ]
             },
-            expCode: 422
+            expCode: 422,
+            privkey: privKeys[0]
         });
     });
 
@@ -116,56 +119,68 @@ test('Initial setup', function tInitialSetup(suite) {
                     message: 'Missing parameter'
                 } ]
             },
-            expCode: 422
-        });
-    });
-
-    suite.test('Create token w/o pubkeys', function tCreateWOPubkeys(t) {
-        var tk = mod_jsprim.deepCopy(TOKENS[0]);
-        delete tk.pubkeys;
-        mod_token.create(t, {
-            params: tk,
-            expErr: {
-                code: 'InvalidParameters',
-                message: 'Missing parameters',
-                errors: [ {
-                    field: 'pubkeys',
-                    code: 'MissingParameter',
-                    message: 'Missing parameter'
-                } ]
-            },
-            expCode: 422
+            expCode: 422,
+            privkey: privKeys[0]
         });
     });
 
     suite.test('Create token invalid pubkeys', function tCreateInvalidKeys(t) {
         var tk = mod_jsprim.deepCopy(TOKENS[0]);
-        tk.pubkeys['9e'] = null;
+        tk.pubkeys['9a'] = null;
         mod_token.create(t, {
             params: tk,
             expErr: {
                 code: 'InvalidParameters',
                 message: 'Invalid parameters',
                 errors: [ {
-                    field: 'pubkeys.9e',
+                    field: 'pubkeys.9a',
                     code: 'InvalidParameter',
                     message: 'must be a string'
                 } ]
             },
-            expCode: 422
+            expCode: 422,
+            privkey: privKeys[0]
         });
     });
 
     suite.test('Create tokens', function tCreateTokens(t) {
-        TOKENS.forEach(function eachToken(token) {
-            t.test('Create token GUID ' + token.guid, function doCreate(t3) {
+        function createAToken(aToken, aKey) {
+            t.test('Create token GUID ' + aToken.guid, function doCreate(t3) {
                 mod_token.create(t3, {
-                    params: token,
-                    exp: token
+                    params: aToken,
+                    exp: aToken,
+                    signer: mod_common.httpSignatureSign,
+                    privkey: aKey
                 });
             });
-        });
+        }
+        var i;
+        for (i = 0; i < TOKENS.length; i += 1) {
+            createAToken(TOKENS[i], privKeys[i]);
+        }
         t.end();
+    });
+
+    suite.test('Create token with invalid privkey', function privKeyErr(t) {
+        var tk = mod_jsprim.deepCopy(TOKENS[0]);
+        mod_token.create(t, {
+            params: tk,
+            expErr: {
+                code: 'InvalidCredentials',
+                message: 'Invalid authorization credentials supplied'
+            },
+            expCode: 401,
+            privkey: privKeys[1]
+        });
+    });
+
+    suite.test('Re-create token with valid privkey', function privKeyOk(t) {
+        var tk = mod_jsprim.deepCopy(TOKENS[0]);
+        mod_token.create(t, {
+            params: tk,
+            exp: tk,
+            privkey: privKeys[0]
+        });
     });
 
     suite.test('Get token', function tGetToken(t) {
@@ -180,8 +195,7 @@ test('Initial setup', function tInitialSetup(suite) {
                 serial: tok.serial,
                 cn_uuid: tok.cn_uuid,
                 model: tok.model,
-                pubkeys: tok.pubkeys,
-                attestation: tok.attestation
+                pubkeys: tok.pubkeys
             },
             fillIn: ['recovery_tokens']
         });
@@ -214,9 +228,7 @@ test('Initial setup', function tInitialSetup(suite) {
 
     suite.test('Delete token', function tDeleteToken(t) {
         mod_token.delete(t, {
-            params: {
-                guid: TOKENS[0].guid
-            },
+            params: TOKENS[0],
             exp: {}
         });
     });
@@ -232,6 +244,102 @@ test('Initial setup', function tInitialSetup(suite) {
                 message: 'piv tokens not found'
             }
         });
+    });
+
+    suite.test('pivy-tool', function pivyCb(t) {
+        var res;
+        const cp = require('child_process');
+        try {
+            res = cp.execSync('which pivy-tool');
+        } catch (error) {
+            console.log(error);
+            t.end();
+            return;
+        }
+
+        const pivytool = res.toString().trim();
+        const _9ecmd = util.format('%s pubkey 9e', pivytool);
+        try {
+            res = cp.execSync(_9ecmd);
+        } catch (err2) {
+            console.log(err2);
+            t.end();
+            return;
+        }
+
+        const pubkey = res.toString().trim();
+        var tk = mod_jsprim.deepCopy(TOKENS[0]);
+        tk.guid = '0F4FE4B9EF0C46FC89DA79B38A61A1A1';
+        tk.cn_uuid = '00000000-0000-0000-0000-000000000003';
+        tk.pubkeys['9e'] = pubkey;
+        delete tk.recovery_tokens;
+
+        CLIENT.createToken({
+            guid: tk.guid,
+            token: tk,
+            pivytool: pivytool
+        }, function createTkCb(err, body, response) {
+            t.ifError(err, 'create token err');
+            t.equal(response.statusCode, 200, 'create token response code');
+            t.ok(body, 'create token body');
+            delete body.recovery_tokens;
+            t.deepEqual(body, tk, 'body expected to be equal to given token');
+
+            CLIENT.createToken({
+                guid: tk.guid,
+                token: tk,
+                pivytool: pivytool
+            }, function reCreateTkCb(err2, body2, response2) {
+                console.log(util.inspect(err2, false, 8, true));
+                console.log(util.inspect(body2, false, 8, true));
+                // console.log(util.inspect(response, false, 1, true));
+
+                t.end();
+            });
+        });
+    });
+
+    // XXX: Remove when done, this is just for initial implementation purposes
+    suite.test('Raw client', function rawClient(t) {
+        var mod_url = require('url');
+        var url = mod_url.parse(KBMAPI.info().url);
+
+        var https = require('http');
+        var httpSignature = require('http-signature');
+        var jsprim = require('jsprim');
+        var key = fs.readFileSync('./test/one_token_test_edcsa', 'ascii');
+        var pubkey = fs.readFileSync('./test/one_token_test_edcsa.pub',
+            'ascii');
+
+
+        var options = {
+           host: url.hostname,
+           port: url.port,
+           path: '/auth',
+           method: 'GET',
+           headers: {
+               date: jsprim.rfc1123(new Date())
+           }
+        };
+        var req = https.request(options, function (res) {
+            t.ok(res);
+            console.log(res.statusCode);
+            res.on('end', function () {
+                console.log('res on end');
+                t.end();
+            });
+        });
+
+        httpSignature.sign(req, {
+            key: key,
+            keyId: httpSignature.sshKeyFingerprint(pubkey)
+        });
+
+        req.on('close', function () {
+            console.log('req on close');
+            t.end();
+        });
+        req.end();
     });
 });
 

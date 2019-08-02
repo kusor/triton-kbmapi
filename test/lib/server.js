@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2018, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 'use strict';
@@ -144,7 +144,6 @@ function createTestServer(opts, callback) {
 
         server.on('initialized', function _afterConnect() {
             log_child.debug('server running');
-
             var client = common.createClient(SERVER.info().url);
             mod_client.set(client);
             callback(null, { server: SERVER, client: client, moray: moray });

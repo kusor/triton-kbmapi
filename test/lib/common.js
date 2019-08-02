@@ -15,7 +15,6 @@
 'use strict';
 
 var KBMAPI = require('../../client/');
-
 var assert = require('assert-plus');
 var clone = require('clone');
 var fmt = require('util').format;

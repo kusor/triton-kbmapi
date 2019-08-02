@@ -27,13 +27,8 @@ FAUCET		:= node_modules/.bin/faucet
 #
 DOC_FILES	= index.md
 JSON_FILES	= package.json
-JS_FILES	:= $(shell find lib test -name '*.js') tools/bashstyle
-JSL_CONF_NODE	= tools/jsl.node.conf
-JSL_FILES_NODE	= $(JS_FILES)
-JSSTYLE_FILES	= $(JS_FILES)
-JSSTYLE_FLAGS	= -o indent=2,doxygen,unparenthesized-return=0,strict-indent=true
+ESLINT_FILES	:= $(shell find lib test -name '*.js') tools/bashstyle
 ESLINT		= ./node_modules/.bin/eslint
-ESLINT_FILES	= $(JS_FILES)
 
 # Not yet
 #BASH_FILES		:= sbin/kbmapid bin/kbmctl

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright 2018, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -36,13 +36,28 @@ function createToken(t, opts, callback) {
     delete params.guid;
 
     if (!opts.desc && opts.expErr) {
-        // opts.desc = JSON.stringify(opts.params);
+        opts.desc = JSON.stringify(opts.params);
     }
 
-    client.createToken(Object.assign({
+    var createOpts = Object.assign({
         guid: guid,
-        token: params
-    }, common.reqOpts(t, opts)),
+        token: params,
+        signer: opts.signer
+    }, common.reqOpts(t, opts));
+
+    if (opts.privkey) {
+        createOpts.privkey = opts.privkey;
+    }
+
+    if (opts.pivyTool) {
+        createOpts.pivyTool = opts.pivyTool;
+    }
+
+    if (opts.openssl) {
+        createOpts.openssl = opts.openssl;
+    }
+
+    client.createToken(createOpts,
         common.afterAPIcall.bind(null, t, opts, callback));
 }
 
@@ -128,9 +143,27 @@ function deleteToken(t, opts, callback) {
 
     client.deleteToken(Object.assign({
         guid: guid,
-        params: params
+        token: params
     }, common.reqOpts(t, opts)),
         common.afterAPIdelete.bind(null, t, opts, callback));
+}
+
+
+function getAuth(t, opts, callback) {
+    common.assertArgs(t, opts, callback);
+    var client = opts.client || mod_client.get();
+
+    log.debug({ params: opts.params }, 'getting auth');
+    opts.type = TYPE;
+    opts.reqType = 'get';
+
+
+    client.testAuth(Object.assign({
+        token: opts.params.token,
+        signer: opts.signer,
+        privkey: opts.privkey
+    }, common.reqOpts(t, opts)),
+        common.afterAPIcall.bind(null, t, opts, callback));
 }
 
 module.exports = {
@@ -139,5 +172,6 @@ module.exports = {
     delete: deleteToken,
     get: getToken,
     getPin: getTokenPin,
-    list: listTokens
+    list: listTokens,
+    getAuth: getAuth
 };
