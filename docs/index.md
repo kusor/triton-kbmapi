@@ -42,7 +42,7 @@ When tokens are deleted or reinitialized, the old token data should be kept in a
 KBMAPI-maintained history.  This history maintains the token data for an
 amount of time defined by the `KBMAPI_HISTORY_DURATION` SAPI variable.  The
 default shall be 15 days.  The purpose is to provide a time-limited backup
-against accidential token deletion.
+against accidental token deletion.
 
 #### Attestation
 
@@ -81,7 +81,7 @@ do _not_ affect existing tokens in KBMAPI.
 
 #### Token object
 
-The token data needs to be presistently store (for hopefully obvious reasons).
+The token data needs to be persistently store (for hopefully obvious reasons).
 A moray bucket will be used to store the token data. The JSON config of the
 bucket will be:
 
@@ -169,7 +169,7 @@ The history bucket looks very similar to the token bucket:
 ```
 
 The major difference is that the index fields are not unique as well as the
-`active_range` index.  An accidentially deleted token that's restored might end
+`active_range` index.  An accidentally deleted token that's restored might end
 up with multiple history entries, and a CN which has had a token replacement
 will also have multiple history entries.
 
@@ -210,7 +210,7 @@ the `comment` property. The `active_range` property represents the (inclusive)
 start and end dates that the provisioned token was in use.
 
 It's permitted that the same provisioned token might have multiple entries in
-the history table.  An example would be a token accidentially deleted and
+the history table.  An example would be a token accidentally deleted and
 restored would have an entry for the deletion, and then a second entry when
 the token is retired (or reprovisioned).
 
@@ -340,7 +340,7 @@ UnknownError       | Something completely unexpected happened.
 
 ### KBMAPI Endpoints
 
-These are the proposed endpoints to meet the above requrements.  They largely
+These are the proposed endpoints to meet the above requirements.  They largely
 document the behavior of the existing KBMAPI prototype (though in a few places
 describe intended behavior not yet present in the prototype).
 
@@ -565,7 +565,7 @@ Response-Time: 23
 
 #### RecoverToken (POST /pivtokens/:guid/recover)
 
-When a token is no longer available (lost, damaged, accidentially reinitialized,
+When a token is no longer available (lost, damaged, accidentally reinitialized,
 etc.), a recovery must be performed.  This allows a new token to replace the
 unavailable token.  When a recovery is required, an operator initiates the
 recovery process on the CN.  This recovery process on the CN will decrypt the
