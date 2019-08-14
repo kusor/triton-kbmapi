@@ -33,7 +33,7 @@ const AUTHZ_FMT =
 /*
  * This is an example from kbmd:
  * date="$(LC_TIME=C TZ=GMT date +"%a, %d %b %Y %T %Z")"
- * sig="$(echo $date | $PIVYTOOL sign 9e | $OPENSSL enc -base64 -A)"
+ * sig="$(printf "$date" | $PIVYTOOL sign 9e | $OPENSSL enc -base64 -A)"
  *
  * pin=$($CURL -sS \
  *  -H "Date: $date" \
@@ -47,16 +47,12 @@ var PRIVKEY;
 var PUBKEY;
 var OPENSSL;
 var PIVYTOOL;
+var AUTH_REQUIRED;
 
 function requestSigner(req) {
-    var signatureRequired = {
-        'get': ['/auth'],
-        'post': ['/pivtokens'],
-        'put': [],
-        'delete': []
-    };
-
-    if (signatureRequired[req.method.toLowerCase()].indexOf(req.path) === -1) {
+    // Let each method decide if we need http auth, either using HMAC or
+    // http signature. And do nothing for methods not needing it.
+    if (!AUTH_REQUIRED) {
         return false;
     }
 
@@ -66,16 +62,14 @@ function requestSigner(req) {
             keyId: httpSignature.sshKeyFingerprint(PUBKEY)
         });
     } else {
-        // XXX: WIP Still getting 411 requests signed like this:
         var date = req.getHeader('Date');
         if (!date) {
             date = jsprim.rfc1123(new Date());
             req.setHeader('Date', date);
         }
 
-
-        var cmd = format('echo %s | %s sign 9e | %s enc -base64 -A',
-                         date, PIVYTOOL, OPENSSL);
+        const cmd = format('printf "%s" | %s sign 9e | %s enc -base64 -A',
+                         'date: ' + date, PIVYTOOL, OPENSSL);
         try {
             var result = cp.execSync(cmd);
         } catch (err) {
@@ -83,11 +77,21 @@ function requestSigner(req) {
             return false;
         }
 
-        req.setHeader('Authorization', util.format(AUTHZ_FMT,
+        result = result.toString().trim();
+
+        // It might be empty and we could be setting an empty signature:
+        if (!result) {
+            return false;
+        }
+
+        const hdr = util.format(AUTHZ_FMT,
             httpSignature.sshKeyFingerprint(PUBKEY),
-           'ecdsa-sha256',
-           'date',
-           result.toString().trim()));
+            'ecdsa-sha256',
+            'date',
+            result
+        );
+
+        req.setHeader('Authorization', hdr);
     }
     return true;
 }
@@ -116,9 +120,7 @@ function KBMAPI(options) {
  * @param {Object} opts object containing:
  *      - {String} guid: (required) the guid of the token.
  *      - {Object} token: (required) the token to be created.
- *      - {Function} signer: (optional) http request signer. Required only when
- *        the POST request will attempt to override an existing token. This
- *        signer object should be able to receive a HTTP Date and use it to
+ *      - {Function} privkey: (optional) private key to sign the request and
  *        generate the HTTP Signature Auth header which will be used to perform
  *        the HTTP request authentication using the token 9e pubkey.
  * @param {Function} cb: of the form f(err, token, res)
@@ -132,14 +134,12 @@ KBMAPI.prototype.createToken = function createToken(opts, cb) {
 
     opts.token.guid = opts.guid;
 
-    // XXX: Modify to properly extract these options for all methods needing:
-    PRIVKEY = opts.privkey;
-    PUBKEY = opts.token.pubkeys['9e'];
-
     var reqOpts = Object.assign(opts, {
         path: '/pivtokens',
         data: opts.token,
-        method: 'POST'
+        method: 'POST',
+        authRequired: true,
+        pubkey: opts.token.pubkeys['9e']
     });
 
     this._request(reqOpts, function reqCb(err, req, res, body) {
@@ -161,10 +161,11 @@ KBMAPI.prototype.deleteToken = function deleteToken(opts, cb) {
     assert.func(cb, 'cb');
 
 
-    var reqOpts = {
+    var reqOpts = Object.assign(opts, {
         path: format('/pivtokens/%s', opts.guid),
-        method: 'DELETE'
-    };
+        method: 'DELETE',
+        authRequired: true
+    });
 
     this._request(reqOpts, function reqCb(err, req, res) {
         cb(err, res);
@@ -182,11 +183,13 @@ KBMAPI.prototype.listTokens = function listTokens(opts, cb) {
     assert.object(opts, 'opts');
     assert.func(cb, 'cb');
 
-    var reqOpts = {
+
+    var reqOpts = Object.assign(opts, {
+        authRequired: false,
         method: 'GET',
         path: '/pivtokens',
         query: opts
-    };
+    });
 
     this._request(reqOpts, function reqCb(err, req, res, body) {
         cb(err, body, res);
@@ -207,10 +210,11 @@ KBMAPI.prototype.getToken = function getToken(opts, cb) {
     assert.string(opts.guid, 'opts.guid');
     assert.func(cb, 'cb');
 
-    var reqOpts = {
+    var reqOpts = Object.assign(opts, {
+        authRequired: false,
         path: format('/pivtokens/%s', opts.guid),
         method: 'GET'
-    };
+    });
 
     this._request(reqOpts, function reqCb(err, req, res, body) {
         cb(err, body, res);
@@ -219,7 +223,7 @@ KBMAPI.prototype.getToken = function getToken(opts, cb) {
 
 /**
  * Gets the token info including PIN.
- * XXX In the released version, this will require authenticating
+ * This is a HTTP Signature authenticated request
  *
  * @param {Object} opts object containing:
  *      - {String} guid: (required) the guid of the token.
@@ -230,10 +234,11 @@ KBMAPI.prototype.getTokenPin = function getTokenPin(opts, cb) {
     assert.string(opts.guid, 'opts.guid');
     assert.func(cb, 'cb');
 
-    var reqOpts = {
+    var reqOpts = Object.assign(opts, {
+        authRequired: true,
         path: format('/pivtokens/%s/pin', opts.guid),
         method: 'GET'
-    };
+    });
 
     this._request(reqOpts, function reqCb(err, req, res, body) {
         cb(err, body, res);
@@ -242,23 +247,6 @@ KBMAPI.prototype.getTokenPin = function getTokenPin(opts, cb) {
 
 
 
-KBMAPI.prototype.testAuth = function getToken(opts, cb) {
-    assert.object(opts, 'opts');
-    assert.func(cb, 'cb');
-
-    var reqOpts = {
-        path: '/auth',
-        method: 'GET',
-        data: opts.token
-    };
-
-    PRIVKEY = opts.privkey;
-    PUBKEY = opts.token.pubkeys['9e'];
-
-    this._request(reqOpts, function reqCb(err, req, res, body) {
-        cb(err, body, res);
-    });
-};
 
 /**
  * KBMAPI request wrapper - modeled after http.request.
@@ -288,8 +276,10 @@ KBMAPI.prototype._request = function _request(opts, cb) {
     assert.string(opts.path, 'opts.path');
     assert.optionalObject(opts.headers, 'opts.headers');
     assert.optionalString(opts.privkey, 'opts.privkey');
-    assert.optionalString(opts.pivytool, 'opts.piviTool');
+    assert.optionalString(opts.pubkey, 'opts.pubkey');
+    assert.optionalString(opts.pivytool, 'opts.pivytool');
     assert.optionalString(opts.openssl, 'opts.openssl');
+    assert.optionalBool(opts.authRequired, 'opts.authRequired');
     assert.func(cb, 'cb');
 
     var method = (opts.method || 'GET').toLowerCase();
@@ -320,6 +310,14 @@ KBMAPI.prototype._request = function _request(opts, cb) {
                     '/usr/bin/openssl';
     }
 
+    if (opts.pubkey) {
+        PUBKEY = opts.pubkey;
+    }
+
+    if (opts.authRequired) {
+        AUTH_REQUIRED = true;
+    }
+
 
     if (opts.data) {
         self.client[clientFnName](reqOpts, opts.data, cb);
@@ -329,3 +327,4 @@ KBMAPI.prototype._request = function _request(opts, cb) {
 };
 
 module.exports = KBMAPI;
+// vim: set softtabstop=4 shiftwidth=4:

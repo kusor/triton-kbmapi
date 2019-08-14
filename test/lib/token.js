@@ -41,16 +41,15 @@ function createToken(t, opts, callback) {
 
     var createOpts = Object.assign({
         guid: guid,
-        token: params,
-        signer: opts.signer
+        token: params
     }, common.reqOpts(t, opts));
 
     if (opts.privkey) {
         createOpts.privkey = opts.privkey;
     }
 
-    if (opts.pivyTool) {
-        createOpts.pivyTool = opts.pivyTool;
+    if (opts.pivytool) {
+        createOpts.pivytool = opts.pivytool;
     }
 
     if (opts.openssl) {
@@ -98,10 +97,28 @@ function getTokenPin(t, opts, callback) {
     opts.type = TYPE;
     opts.reqType = 'get';
 
-
-    client.getTokenPin(Object.assign({
+    var getPinOpts = Object.assign({
         guid: guid
-    }, common.reqOpts(t, opts)),
+    }, common.reqOpts(t, opts));
+
+
+    if (opts.privkey) {
+        getPinOpts.privkey = opts.privkey;
+    }
+
+    if (opts.pivytool) {
+        getPinOpts.pivytool = opts.pivytool;
+    }
+
+    if (opts.openssl) {
+        getPinOpts.openssl = opts.openssl;
+    }
+
+    if (opts.pubkey) {
+        getPinOpts.pubkey = opts.pubkey;
+    }
+
+    client.getTokenPin(getPinOpts,
         common.afterAPIcall.bind(null, t, opts, callback));
 }
 
@@ -141,29 +158,30 @@ function deleteToken(t, opts, callback) {
 
     delete params.guid;
 
-    client.deleteToken(Object.assign({
+    var delOpts = Object.assign({
         guid: guid,
         token: params
-    }, common.reqOpts(t, opts)),
+    }, common.reqOpts(t, opts));
+
+
+    if (opts.privkey) {
+        delOpts.privkey = opts.privkey;
+    }
+
+    if (opts.pivytool) {
+        delOpts.pivytool = opts.pivytool;
+    }
+
+    if (opts.openssl) {
+        delOpts.openssl = opts.openssl;
+    }
+
+    if (opts.pubkey) {
+        delOpts.pubkey = opts.pubkey;
+    }
+
+    client.deleteToken(delOpts,
         common.afterAPIdelete.bind(null, t, opts, callback));
-}
-
-
-function getAuth(t, opts, callback) {
-    common.assertArgs(t, opts, callback);
-    var client = opts.client || mod_client.get();
-
-    log.debug({ params: opts.params }, 'getting auth');
-    opts.type = TYPE;
-    opts.reqType = 'get';
-
-
-    client.testAuth(Object.assign({
-        token: opts.params.token,
-        signer: opts.signer,
-        privkey: opts.privkey
-    }, common.reqOpts(t, opts)),
-        common.afterAPIcall.bind(null, t, opts, callback));
 }
 
 module.exports = {
@@ -172,6 +190,5 @@ module.exports = {
     delete: deleteToken,
     get: getToken,
     getPin: getTokenPin,
-    list: listTokens,
-    getAuth: getAuth
+    list: listTokens
 };

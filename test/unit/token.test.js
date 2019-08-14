@@ -14,16 +14,15 @@
 
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var util = require('util');
+const fs = require('fs');
+const path = require('path');
+const util = require('util');
 
-var h = require('./helpers');
-var mod_jsprim = require('jsprim');
-var mod_token = require('../lib/token');
-var mod_server = require('../lib/server');
-var mod_common = require('../lib/common');
-var test = require('tape');
+const h = require('./helpers');
+const mod_jsprim = require('jsprim');
+const mod_token = require('../lib/token');
+const mod_server = require('../lib/server');
+const test = require('tape');
 
 
 var KBMAPI;
@@ -149,7 +148,6 @@ test('Initial setup', function tInitialSetup(suite) {
                 mod_token.create(t3, {
                     params: aToken,
                     exp: aToken,
-                    signer: mod_common.httpSignatureSign,
                     privkey: aKey
                 });
             });
@@ -201,6 +199,22 @@ test('Initial setup', function tInitialSetup(suite) {
         });
     });
 
+
+    suite.test('Get token with pin requires auth', function tGetTkPinAuth(t) {
+        var tok = TOKENS[0];
+
+        mod_token.getPin(t, {
+            params: {
+                guid: tok.guid
+            },
+            expErr: {
+                code: 'InvalidCredentials',
+                message: 'You must make authenticated requests to use KBMAPI'
+            },
+            expCode: 401
+        });
+    });
+
     suite.test('Get token with pin', function tGetTokenPin(t) {
         var tok = TOKENS[0];
 
@@ -208,6 +222,8 @@ test('Initial setup', function tInitialSetup(suite) {
             params: {
                 guid: tok.guid
             },
+            privkey: privKeys[0],
+            pubkey: TOKENS[0].pubkeys['9e'],
             exp: tok
         });
     });
@@ -226,9 +242,21 @@ test('Initial setup', function tInitialSetup(suite) {
             });
     });
 
+    suite.test('Delete token requires auth', function tDelTkAuthRequired(t) {
+        mod_token.delete(t, {
+            params: TOKENS[0],
+            expErr: {
+                code: 'InvalidCredentials',
+                message: 'You must make authenticated requests to use KBMAPI'
+            },
+            expCode: 401
+        });
+    });
+
     suite.test('Delete token', function tDeleteToken(t) {
         mod_token.delete(t, {
             params: TOKENS[0],
+            privkey: privKeys[0],
             exp: {}
         });
     });
@@ -253,6 +281,7 @@ test('Initial setup', function tInitialSetup(suite) {
             res = cp.execSync('which pivy-tool');
         } catch (error) {
             console.log(error);
+            t.comment('Skipping tests b/c `which pivy-tool` cmd failed');
             t.end();
             return;
         }
@@ -263,6 +292,7 @@ test('Initial setup', function tInitialSetup(suite) {
             res = cp.execSync(_9ecmd);
         } catch (err2) {
             console.log(err2);
+            t.comment('Skipping tests b/c ' + _9ecmd + ' failed');
             t.end();
             return;
         }
@@ -290,56 +320,13 @@ test('Initial setup', function tInitialSetup(suite) {
                 token: tk,
                 pivytool: pivytool
             }, function reCreateTkCb(err2, body2, response2) {
-                console.log(util.inspect(err2, false, 8, true));
-                console.log(util.inspect(body2, false, 8, true));
-                // console.log(util.inspect(response, false, 1, true));
-
+                t.ifError(err2, 'create token pivy signed err');
+                t.ok(body2.recovery_tokens, 'missing recovery_tokens');
+                tk.recovery_tokens = body2.recovery_tokens;
+                t.deepEqual(body2, tk, 'body  expected to be equal to token');
                 t.end();
             });
         });
-    });
-
-    // XXX: Remove when done, this is just for initial implementation purposes
-    suite.test('Raw client', function rawClient(t) {
-        var mod_url = require('url');
-        var url = mod_url.parse(KBMAPI.info().url);
-
-        var https = require('http');
-        var httpSignature = require('http-signature');
-        var jsprim = require('jsprim');
-        var key = fs.readFileSync('./test/one_token_test_edcsa', 'ascii');
-        var pubkey = fs.readFileSync('./test/one_token_test_edcsa.pub',
-            'ascii');
-
-
-        var options = {
-           host: url.hostname,
-           port: url.port,
-           path: '/auth',
-           method: 'GET',
-           headers: {
-               date: jsprim.rfc1123(new Date())
-           }
-        };
-        var req = https.request(options, function (res) {
-            t.ok(res);
-            console.log(res.statusCode);
-            res.on('end', function () {
-                console.log('res on end');
-                t.end();
-            });
-        });
-
-        httpSignature.sign(req, {
-            key: key,
-            keyId: httpSignature.sshKeyFingerprint(pubkey)
-        });
-
-        req.on('close', function () {
-            console.log('req on close');
-            t.end();
-        });
-        req.end();
     });
 });
 
@@ -347,3 +334,5 @@ test('Stop server', function closeServers(t) {
     KBMAPI.server.close();
     mod_server.close(t);
 });
+
+// vim: set softtabstop=4 shiftwidth=4:
