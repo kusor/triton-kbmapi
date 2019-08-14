@@ -96,7 +96,7 @@ function afterAPIcall(t, opts, callback, err, obj, res) {
         return;
     }
 
-    t.equal(res.statusCode, 200, 'status code' + desc);
+    t.ok([200, 201].indexOf(res.statusCode) !== -1, 'status code ' + desc);
 
     if (opts.hasOwnProperty('idKey')) {
         t.ok(true, fmt('created %s "%s"', opts.type, obj[opts.idKey]));

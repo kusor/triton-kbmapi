@@ -67,7 +67,7 @@ function createAndGetToken(t, opts, callback) {
             doneErr(err, t, callback);
             return;
         }
-        opts.reqtype = 'get';
+        opts.reqType = 'get';
 
         getToken(t, opts, callback);
     });

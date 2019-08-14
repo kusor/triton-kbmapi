@@ -310,7 +310,7 @@ test('Initial setup', function tInitialSetup(suite) {
             pivytool: pivytool
         }, function createTkCb(err, body, response) {
             t.ifError(err, 'create token err');
-            t.equal(response.statusCode, 200, 'create token response code');
+            t.equal(response.statusCode, 201, 'create token response code');
             t.ok(body, 'create token body');
             delete body.recovery_tokens;
             t.deepEqual(body, tk, 'body expected to be equal to given token');
@@ -324,6 +324,7 @@ test('Initial setup', function tInitialSetup(suite) {
                 t.ok(body2.recovery_tokens, 'missing recovery_tokens');
                 tk.recovery_tokens = body2.recovery_tokens;
                 t.deepEqual(body2, tk, 'body  expected to be equal to token');
+                t.equal(response2.statusCode, 200, 'create token resp code');
                 t.end();
             });
         });
