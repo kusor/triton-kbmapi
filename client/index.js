@@ -44,6 +44,7 @@ const AUTHZ_FMT =
 
 var SIGNER;
 var PRIVKEY;
+var PRIVTOKEN;
 var PUBKEY;
 var OPENSSL;
 var PIVYTOOL;
@@ -57,10 +58,18 @@ function requestSigner(req) {
     }
 
     if (SIGNER === 'httpSignature') {
-        httpSignature.signRequest(req, {
-            key: PRIVKEY,
-            keyId: httpSignature.sshKeyFingerprint(PUBKEY)
-        });
+        if (PRIVTOKEN) {
+            httpSignature.signRequest(req, {
+                key: PRIVTOKEN,
+                keyId: 'recovery_token',
+                algorithm: 'hmac-sha256'
+            });
+        } else {
+            httpSignature.signRequest(req, {
+                key: PRIVKEY,
+                keyId: httpSignature.sshKeyFingerprint(PUBKEY)
+            });
+        }
     } else {
         var date = req.getHeader('Date');
         if (!date) {
@@ -140,6 +149,41 @@ KBMAPI.prototype.createToken = function createToken(opts, cb) {
         method: 'POST',
         authRequired: true,
         pubkey: opts.token.pubkeys['9e']
+    });
+
+    this._request(reqOpts, function reqCb(err, req, res, body) {
+        cb(err, body, res);
+    });
+};
+
+
+/**
+ * Replaces a pivtoken with a new one, using the initial pivtoken's
+ * recovery_token value as the key for authentication using HMAC.
+ *
+ * @param {Object} opts object containing:
+ *      - {String} guid: (required) the guid of the token to be replaced.
+ *      - {String} recovery_token: (required) the recovery token of the token
+ *        to be replaced.
+ *      - {Object} token: (required) the new token to be created.
+ * @param {Function} cb: of the form f(err, token, res)
+ *
+ */
+KBMAPI.prototype.recoverToken = function recoverToken(opts, cb) {
+    assert.object(opts, 'opts');
+    assert.string(opts.guid, 'opts.guid');
+    assert.string(opts.recovery_token, 'opts.recovery_token');
+    assert.object(opts.token, 'opts.token');
+    assert.func(cb, 'cb');
+
+    var reqOpts = Object.assign(opts, {
+        path: '/pivtokens/' + opts.guid + '/recover',
+        data: {
+            token: opts.token
+        },
+        method: 'POST',
+        authRequired: true,
+        privtoken: opts.recovery_token
     });
 
     this._request(reqOpts, function reqCb(err, req, res, body) {
@@ -276,6 +320,7 @@ KBMAPI.prototype._request = function _request(opts, cb) {
     assert.string(opts.path, 'opts.path');
     assert.optionalObject(opts.headers, 'opts.headers');
     assert.optionalString(opts.privkey, 'opts.privkey');
+    assert.optionalString(opts.privtoken, 'opts.privtoken');
     assert.optionalString(opts.pubkey, 'opts.pubkey');
     assert.optionalString(opts.pivytool, 'opts.pivytool');
     assert.optionalString(opts.openssl, 'opts.openssl');
@@ -287,7 +332,7 @@ KBMAPI.prototype._request = function _request(opts, cb) {
         'invalid HTTP method given');
     var clientFnName = (method === 'delete' ? 'del' : method);
 
-    SIGNER = opts.privkey ? 'httpSignature' : 'pivytool';
+    SIGNER = (opts.privkey || opts.privtoken) ? 'httpSignature' : 'pivytool';
 
     var reqOpts = {
         token: opts.data,
@@ -301,6 +346,8 @@ KBMAPI.prototype._request = function _request(opts, cb) {
 
     if (opts.privkey) {
         PRIVKEY = opts.privkey;
+    } else if (opts.privtoken) {
+        PRIVTOKEN = opts.privtoken;
     } else {
         PIVYTOOL = process.env.PIVYTOOL ||
                     opts.pivytool ||
@@ -317,7 +364,6 @@ KBMAPI.prototype._request = function _request(opts, cb) {
     if (opts.authRequired) {
         AUTH_REQUIRED = true;
     }
-
 
     if (opts.data) {
         self.client[clientFnName](reqOpts, opts.data, cb);

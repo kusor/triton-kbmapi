@@ -27,7 +27,7 @@ function createToken(t, opts, callback) {
     var client = opts.client || mod_client.get();
 
     log.debug({ params: opts.params }, 'creating pivtoken');
-    opts.fillIn = [ 'guid', 'recovery_tokens' ];
+    opts.fillIn = [ 'guid', 'recovery_tokens', 'created' ];
     opts.type = TYPE;
     opts.reqType = 'create';
 
@@ -184,11 +184,38 @@ function deleteToken(t, opts, callback) {
         common.afterAPIdelete.bind(null, t, opts, callback));
 }
 
+function recoverToken(t, opts, callback) {
+    common.assertArgs(t, opts, callback);
+    var client = opts.client || mod_client.get();
+    var guid = opts.params.guid;
+    var params = clone(opts.params);
+
+    log.debug({ params: opts.params }, 'recovering pivtoken');
+    opts.id = guid;
+    opts.type = TYPE;
+    opts.reqType = 'recover';
+    opts.fillIn = [ 'recovery_tokens', 'created' ];
+
+    var recoverOpts = Object.assign({
+        guid: params.guid,
+        token: params.token
+    }, common.reqOpts(t, opts));
+
+
+    if (params.recovery_token) {
+        recoverOpts.recovery_token = params.recovery_token;
+    }
+
+    client.recoverToken(recoverOpts,
+        common.afterAPIcall.bind(null, t, opts, callback));
+}
+
 module.exports = {
     create: createToken,
     createAndGet: createAndGetToken,
     delete: deleteToken,
     get: getToken,
     getPin: getTokenPin,
-    list: listTokens
+    list: listTokens,
+    recover: recoverToken
 };

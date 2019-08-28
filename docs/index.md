@@ -190,7 +190,7 @@ same as the token bucket:
     }, {
         "created": 2233445566,
         "token": "QmUgc3VyZSB0byBkcmluayB5b3VyIG92YWx0aW5l"
-    }]
+    }],
     "pubkeys": {
        "9e": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYA...",
        "9d": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYA...",
@@ -594,9 +594,10 @@ is returned.
 
 If all the checks succeed, the information from the old token (`:guid`) is
 moved to a history entry for that token. Any subsequent requests to
-`/pivtokens/:guid` should either return a `404 Not found` reply or, in case
-we add some kind of `replaced_by: :new_guid` attribute to the archived token,
-we could also return `301 Moved Permanently` with the new pivtoken location.
+`/pivtokens/:guid` should either return a `404 Not found` reply. Note we do
+not try to return a `301 Moved Permanently` response with a new pivtoken
+location because we could have a request to a pivtoken which has already been
+replaced by another, which in turn has been replaced by another one ...
 
 The newly created token will then be returned, together with the proper
 `Location` header (`/pivtokens/:new_guid`). In case of network/retry issues,
@@ -861,12 +862,12 @@ Response-Time: 997
 
 Note: alternatively, an operator can manually run kbmadm to delete an entry.
 
+A destroyed token is automatically added to `token_history`.
+
 ## Development status
 
 - Not yet implemented authentication using `recovery_token` for `RecoverToken`.
-- Token history bucket must be created. Tokens should be moved into history
-  once those have been _recovered_.
-- Decide if a token destroyed using `DeleteToken` should also be archived.
+- Tokens should be moved into history once those have been _recovered_.
 - `token_serial` bucket needs to be created and end-point to access tokens
   serial should be provided.
 - SAPI configuration for attestation is not present and none of the associated

@@ -14,6 +14,7 @@
 
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
@@ -61,6 +62,23 @@ var TOKENS = [
         }
     }
 ];
+
+var OTHER_TOKEN = {
+    model: 'Yubico Yubikey 4',
+    serial: 6324923,
+    cn_uuid: '00000000-0000-0000-0000-000000000002',
+    guid: '1FFCFCBF0BE44E30975A550069B9B741',
+    pin: '424242',
+    pubkeys: {
+            /* eslint-disable max-len */
+            '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEv/A+0Gc6X5fADdewP1+VJvqgq+ANVCA9rLHxvVkbqbDeFoUBFIPBqKBmpw6kWMb4J6B+4oQTp936+CgdJySz8=',
+            '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFD+ANQt5yC9EvPa5V7OfFpscRDbN9e+ghc0g+u6wVA4CQw1+/s4NRUybf/HIOveYHfpiP9ai5C6HAZYQE28rNY=',
+            '9e': fs.readFileSync(path.resolve(__dirname, '../another_token_recovery_edcsa.pub'), 'ascii')
+            /* eslint-enable max-len */
+    }
+};
+
+var RECOVERY_TOKEN;
 
 var privKeys = [
     fs.readFileSync(path.resolve(__dirname, '../one_token_test_edcsa'),
@@ -216,15 +234,19 @@ test('Initial setup', function tInitialSetup(suite) {
     });
 
     suite.test('Get token with pin', function tGetTokenPin(t) {
-        var tok = TOKENS[0];
+        var tok = TOKENS[1];
 
         mod_token.getPin(t, {
             params: {
                 guid: tok.guid
             },
-            privkey: privKeys[0],
-            pubkey: TOKENS[0].pubkeys['9e'],
+            privkey: privKeys[1],
+            pubkey: TOKENS[1].pubkeys['9e'],
             exp: tok
+        }, function getPinCb(_err, token, _res) {
+            t.ok(token.recovery_tokens[0].token, 'Recover token');
+            RECOVERY_TOKEN = token.recovery_tokens[0].token;
+            t.end();
         });
     });
 
@@ -327,6 +349,32 @@ test('Initial setup', function tInitialSetup(suite) {
                 t.equal(response2.statusCode, 200, 'create token resp code');
                 t.end();
             });
+        });
+    });
+
+    suite.test('recovery token needs HMAC auth', function recoveryToken401(t) {
+        mod_token.recover(t, {
+            params: {
+                guid: TOKENS[1].guid,
+                recovery_token: crypto.randomBytes(40).toString('hex'),
+                token: OTHER_TOKEN
+            },
+            expErr: {
+                code: 'InvalidCredentials',
+                message: 'Invalid authorization credentials supplied'
+            },
+            expCode: 401
+        });
+    });
+
+    suite.test('recovery token', function recoveryToken(t) {
+        mod_token.recover(t, {
+            params: {
+                guid: TOKENS[1].guid,
+                recovery_token: RECOVERY_TOKEN,
+                token: OTHER_TOKEN
+            },
+            exp: OTHER_TOKEN
         });
     });
 });
