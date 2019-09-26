@@ -77,6 +77,7 @@ function getToken(t, opts, callback) {
     common.assertArgs(t, opts, callback);
     var client = opts.client || mod_client.get();
     var guid = opts.params.guid;
+    opts.fillIn = [ 'created' ];
 
     log.debug({ params: opts.params }, 'getting pivtoken');
     opts.type = TYPE;
