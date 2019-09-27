@@ -220,3 +220,5 @@ module.exports = {
     list: listTokens,
     recover: recoverToken
 };
+
+// vim: set softtabstop=4 shiftwidth=4:

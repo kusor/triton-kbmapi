@@ -290,6 +290,115 @@ KBMAPI.prototype.getTokenPin = function getTokenPin(opts, cb) {
 };
 
 
+/**
+ * KBMAPI Recovery Configurations management
+ */
+
+
+/**
+ * Creates a recovery configuration
+ *
+ * @param {Object} opts object containing:
+ *      - {String} template: (required) the template for the recovery
+ *        configuration to be created.
+ * @param {Function} cb: of the form f(err, recovery_configuration, res)
+ *
+ */
+KBMAPI.prototype.createRecoveryConfiguration =
+function createRecoveryConfiguration(opts, cb) {
+    assert.object(opts, 'opts');
+    assert.string(opts.template, 'opts.template');
+    assert.func(cb, 'cb');
+
+    var reqOpts = Object.assign(opts, {
+        path: '/recovery-configurations',
+        data: {
+            template: opts.template
+        },
+        method: 'POST',
+        authRequired: false
+    });
+
+    this._request(reqOpts, function reqCb(err, req, res, body) {
+        cb(err, body, res);
+    });
+};
+
+
+/**
+ * Deletes the recovery configuration specified by UUID
+ *
+ * @param {Object} opts object containing:
+ *      - {String} uuid: (required) the uuid of the token to be destroyed.
+ * @param {Function} cb: of the form f(err, res)
+ */
+KBMAPI.prototype.deleteRecoveryConfiguration =
+function deleteRecoveryConfiguration(opts, cb) {
+    assert.object(opts, 'opts');
+    assert.string(opts.uuid, 'opts.uuid');
+    assert.func(cb, 'cb');
+
+
+    var reqOpts = Object.assign(opts, {
+        path: format('/recovery-configurations/%s', opts.uuid),
+        method: 'DELETE',
+        authRequired: false
+    });
+
+    this._request(reqOpts, function reqCb(err, req, res) {
+        cb(err, res);
+    });
+};
+
+/**
+ * List all recovery configurations
+ *
+ * @param {Object} opts object containing any list filtering argument
+ *          like `offset`, `limit`, `filter` ...
+ * @param {Function} cb: of the form f(err, recovery_configurations, res)
+ */
+KBMAPI.prototype.listRecoveryConfigurations =
+function listRecoveryConfigurations(opts, cb) {
+    assert.object(opts, 'opts');
+    assert.func(cb, 'cb');
+
+    var reqOpts = Object.assign(opts, {
+        authRequired: false,
+        method: 'GET',
+        path: '/recovery-configurations',
+        query: opts
+    });
+
+    this._request(reqOpts, function reqCb(err, req, res, body) {
+        cb(err, body, res);
+    });
+};
+
+// XXX No update for the moment
+
+/**
+ * Gets the public information about a recovery configuration
+ *
+ * @param {Object} opts object containing:
+ *      - {String} uuid: (required) the uuid of the recovery configuration.
+ * @param {Function} cb: of the form f(err, recovery_configuration, res)
+ */
+KBMAPI.prototype.getRecoveryConfiguration =
+function getRecoveryConfiguration(opts, cb) {
+    assert.object(opts, 'opts');
+    assert.string(opts.uuid, 'opts.uuid');
+    assert.func(cb, 'cb');
+
+    var reqOpts = Object.assign(opts, {
+        authRequired: false,
+        path: format('/recovery-configurations/%s', opts.uuid),
+        method: 'GET'
+    });
+
+    this._request(reqOpts, function reqCb(err, req, res, body) {
+        cb(err, body, res);
+    });
+};
 
 
 /**
