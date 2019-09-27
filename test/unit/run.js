@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 'use strict';
@@ -27,5 +27,8 @@ function runTests(directory) {
 }
 
 (function main() {
-    runTests(__dirname);
+    runTests(__dirname + '/models');
+    runTests(__dirname + '/resources');
 })();
+
+// vim: set softtabstop=4 shiftwidth=4:

@@ -38,6 +38,15 @@ and a similar command can be used to run tests with code coverage:
 
     npm run-script coverage
 
+Given there are some warnings being printed out by one of the dependencies,
+another way to run the whole set of unit tests including code coverage is
+
+    make test 2> /dev/null
+
+then, getting code coverage results is as simple as:
+
+    open coverage/lcov-report/index.html
+
 ## Installation
 
 To warn again, this is a work in progress prototype.  You should **not** attempt

@@ -19,18 +19,18 @@ const fs = require('fs');
 const path = require('path');
 const util = require('util');
 
-const h = require('./helpers');
+const h = require('../helpers');
 const mod_jsprim = require('jsprim');
-const mod_token = require('../lib/token');
-const mod_server = require('../lib/server');
+const mod_token = require('../../lib/token');
+const mod_server = require('../../lib/server');
 const test = require('tape');
 
 // TODO: Replace this when recovery-configuration endpoint is ready:
-const models = require('../../lib/models');
+const models = require('../../../lib/models');
 const mod_recovery_configuration = models.recovery_configuration;
 
 const eboxTpl = fs.readFileSync(path.resolve(
-    __dirname, '../backup'), 'ascii');
+    __dirname, '../../backup'), 'ascii');
 
 var KBMAPI;
 var MORAY;
@@ -50,7 +50,7 @@ var TOKENS = [
             /* eslint-disable max-len */
             '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC7NhJvp9c5XMOkPLfDvsHZytnY4cWduFRF4KlQIr7LNQnbw50NNlbyhXHzD85KjcztyMoqn9w4XuHdJh4O1lH4=',
             '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBD+uKKyn5tBNziW21yPt/0FE2LD4l1cWgzONYjn3n8BzSNo/aTzJccki7Q/Lyk7dM8yZLAc/5V/U/QHbLTpexBg=',
-            '9e': fs.readFileSync(path.resolve(__dirname, '../one_token_test_edcsa.pub'), 'ascii')
+            '9e': fs.readFileSync(path.resolve(__dirname, '../../one_token_test_edcsa.pub'), 'ascii')
             /* eslint-enable max-len */
         }
     },
@@ -64,7 +64,7 @@ var TOKENS = [
             /* eslint-disable max-len */
             '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEv/A+0Gc6X5fADdewP1+VJvqgq+ANVCA9rLHxvVkbqbDeFoUBFIPBqKBmpw6kWMb4J6B+4oQTp936+CgdJySz8=',
             '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFD+ANQt5yC9EvPa5V7OfFpscRDbN9e+ghc0g+u6wVA4CQw1+/s4NRUybf/HIOveYHfpiP9ai5C6HAZYQE28rNY=',
-            '9e': fs.readFileSync(path.resolve(__dirname, '../another_token_test_edcsa.pub'), 'ascii')
+            '9e': fs.readFileSync(path.resolve(__dirname, '../../another_token_test_edcsa.pub'), 'ascii')
             /* eslint-enable max-len */
         }
     }
@@ -80,7 +80,7 @@ var OTHER_TOKEN = {
             /* eslint-disable max-len */
             '9a': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEv/A+0Gc6X5fADdewP1+VJvqgq+ANVCA9rLHxvVkbqbDeFoUBFIPBqKBmpw6kWMb4J6B+4oQTp936+CgdJySz8=',
             '9d': 'ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFD+ANQt5yC9EvPa5V7OfFpscRDbN9e+ghc0g+u6wVA4CQw1+/s4NRUybf/HIOveYHfpiP9ai5C6HAZYQE28rNY=',
-            '9e': fs.readFileSync(path.resolve(__dirname, '../another_token_recovery_edcsa.pub'), 'ascii')
+            '9e': fs.readFileSync(path.resolve(__dirname, '../../another_token_recovery_edcsa.pub'), 'ascii')
             /* eslint-enable max-len */
     }
 };
@@ -88,9 +88,9 @@ var OTHER_TOKEN = {
 var RECOVERY_TOKEN;
 
 var privKeys = [
-    fs.readFileSync(path.resolve(__dirname, '../one_token_test_edcsa'),
+    fs.readFileSync(path.resolve(__dirname, '../../one_token_test_edcsa'),
         'ascii'),
-    fs.readFileSync(path.resolve(__dirname, '../another_token_test_edcsa'),
+    fs.readFileSync(path.resolve(__dirname, '../../another_token_test_edcsa'),
         'ascii')
 ];
 
