@@ -52,7 +52,7 @@ var TOKENS = [
     }
 ];
 
-test('RecoveryToken model test', function setup(suite) {
+test('PIVToken model test', function setup(suite) {
     mod_server.setupMoray(log_child, function setupCb(setupErr, moray) {
         if (setupErr) {
             suite.comment('Skipping tests b/c moray setup failed');
